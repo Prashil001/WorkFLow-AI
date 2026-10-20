@@ -1,4 +1,8 @@
 from app.workflow_engine.state import WorkflowGraphState
+from app.workflow_engine.schemas import WorkflowPlan
+
+from typing import Any
+from collections.abc import Callable
 
 def normalize_request(
         state: WorkflowGraphState,
@@ -27,3 +31,20 @@ def validate_request(
     return {
         "is_valid": True,
     }
+
+
+def make_plan_node(
+        plan_generator: Callable[[str], WorkflowPlan],
+):
+    def plan_tasks(
+        state: WorkflowGraphState,
+    ) -> dict[str, dict[str, Any]]:
+
+        request = state["normalized_request"]
+        plan = plan_generator(request)
+
+        return {
+            "plan": plan.model_dump(mode="json")
+        }
+
+    return plan_tasks

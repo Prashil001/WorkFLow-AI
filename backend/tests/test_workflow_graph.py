@@ -2,10 +2,24 @@
 import pytest
 
 from app.workflow_engine.graph import build_workflow_graph
+from app.workflow_engine.schemas import WorkflowPlan
+
+
+
+def fake_plan_generator(
+    request: str,
+) -> WorkflowPlan:
+    return WorkflowPlan(
+        summary="Test plan",
+        missing_information=[],
+        tasks=[],
+    )
 
 
 def test_graph_accepts_valid_request():
-    graph = build_workflow_graph()
+    graph = build_workflow_graph(
+        plan_generator=fake_plan_generator
+    )
 
     result = graph.invoke({
         "original_request": "  Prepare client proposal  "
@@ -19,7 +33,9 @@ def test_graph_accepts_valid_request():
 
 
 def test_graph_preserves_original_request():
-    graph = build_workflow_graph()
+    graph = build_workflow_graph(
+        plan_generator=fake_plan_generator
+    )
 
     original = "  Find the previous proposal  "
 
@@ -41,7 +57,9 @@ def test_graph_preserves_original_request():
 def test_graph_rejects_invalid_requests(
     invalid_request,
 ):
-    graph = build_workflow_graph()
+    graph = build_workflow_graph(
+        plan_generator=fake_plan_generator
+    )
 
     with pytest.raises(ValueError):
         graph.invoke({
@@ -50,7 +68,9 @@ def test_graph_rejects_invalid_requests(
 
 
 def test_graph_accepts_maximum_length():
-    graph = build_workflow_graph()
+    graph = build_workflow_graph(
+        plan_generator=fake_plan_generator
+    )
 
     result = graph.invoke({
         "original_request": "x" * 5000
