@@ -1,5 +1,11 @@
 from app.workflow_engine.state import WorkflowGraphState
 from app.workflow_engine.schemas import WorkflowPlan
+from app.workflow_engine.validation import (
+    PlanValidationError,
+    get_execution_order,
+)
+
+from pydantic import ValidationError
 
 from typing import Any
 from collections.abc import Callable
@@ -48,3 +54,28 @@ def make_plan_node(
         }
 
     return plan_tasks
+
+
+def validate_ai_plan(
+    state: WorkflowGraphState,
+) -> dict[str, list[str]]:
+
+    # Convert the stored dictionary
+    # back into a Pydantic model.
+    try:
+        plan = WorkflowPlan.model_validate(
+            state["plan"]
+        )
+
+    except (ValidationError, KeyError, TypeError) as exc:
+        raise PlanValidationError(
+            "Plan is missing or has invalid structure"
+        ) from exc
+
+    # Run basic validation and cycle detection.
+    execution_order = get_execution_order(plan)
+
+    # Save the result in LangGraph state.
+    return {
+        "execution_order": execution_order
+    }

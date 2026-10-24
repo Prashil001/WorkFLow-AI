@@ -5,4 +5,5 @@ class WorkflowGraphState(TypedDict):
     normalized_request: NotRequired[str]
     is_valid: NotRequired[bool]
     plan: NotRequired[dict[str, Any]]
+    execution_order: NotRequired[list[str]]
 

@@ -9,6 +9,7 @@ from app.workflow_engine.nodes import (
     normalize_request,
     validate_request,
     make_plan_node,
+    validate_ai_plan,
 )
 
 def build_workflow_graph(
@@ -28,6 +29,11 @@ def build_workflow_graph(
     )
 
     builder.add_node(
+        "validate_ai_plan",
+        validate_ai_plan,
+    )
+
+    builder.add_node(
         "plan_tasks",
         make_plan_node(plan_generator)
     )
@@ -35,7 +41,15 @@ def build_workflow_graph(
     builder.add_edge(START, "normalize_request")
     builder.add_edge("normalize_request", "validate_request")
     builder.add_edge("validate_request","plan_tasks")
-    builder.add_edge("plan_tasks", END)
+    builder.add_edge(
+        "plan_tasks",
+        "validate_ai_plan",
+    )
+    builder.add_edge(
+        "validate_ai_plan",
+        END,
+    )
+
 
     graph = builder.compile()
 

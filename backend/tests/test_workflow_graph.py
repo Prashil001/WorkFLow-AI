@@ -2,7 +2,8 @@
 import pytest
 
 from app.workflow_engine.graph import build_workflow_graph
-from app.workflow_engine.schemas import WorkflowPlan
+from app.workflow_engine.schemas import WorkflowPlan, PlannedTask
+
 
 
 
@@ -12,8 +13,16 @@ def fake_plan_generator(
     return WorkflowPlan(
         summary="Test plan",
         missing_information=[],
-        tasks=[],
+        tasks=[
+            PlannedTask(
+                task_id="T1",
+                task_type="retrieve_documents",
+                description="Find test documents",
+                depends_on=[],
+            )
+        ],
     )
+
 
 
 def test_graph_accepts_valid_request():
