@@ -11,8 +11,8 @@ def test_mcp_server_exposes_the_same_read_only_tools():
             listed = await client.list_tools()
             tool_names = {tool.name for tool in listed.tools}
             result = await client.call_tool(
-                "search_pricing_documents",
-                {"query": "Northstar Labs pricing"},
+                "check_calendar_availability",
+                {"query": "2026-11-04 afternoon"},
             )
             text_content = [
                 block.text
@@ -28,4 +28,4 @@ def test_mcp_server_exposes_the_same_read_only_tools():
         "check_calendar_availability",
     }
     assert is_error is False
-    assert any("mock-pricing-001" in text for text in text_content)
+    assert any("mock-slot-002" in text for text in text_content)

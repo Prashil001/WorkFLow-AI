@@ -57,6 +57,11 @@ class TaskExecutionResult(BaseModel):
         description="Failure or skip reason when execution does not complete",
     )
 
+    source_ids: list[str] = Field(
+        default_factory=list,
+        description="Source document IDs used to produce this result",
+    )
+
 
 class WorkflowPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")

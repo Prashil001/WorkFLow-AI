@@ -1,8 +1,11 @@
 import pytest
 
 from app.workflow_engine.graph import build_workflow_graph
-from app.workflow_engine.executor import execute_task
-from app.workflow_engine.schemas import PlannedTask, WorkflowPlan
+from app.workflow_engine.schemas import (
+    PlannedTask,
+    TaskExecutionResult,
+    WorkflowPlan,
+)
 from app.workflow_engine.validation import PlanValidationError
 
 
@@ -29,9 +32,19 @@ def test_ready_plan_executes_in_dependency_order_and_stores_results():
 
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        source_ids = sorted({
+            source_id
+            for dependency in dependency_results.values()
+            for source_id in dependency.source_ids
+        })
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+            source_ids=source_ids,
+        )
 
     graph = build_workflow_graph(
         plan_generator=fake_planner,
@@ -71,9 +84,13 @@ def test_missing_information_plan_does_not_execute_tasks():
 
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     graph = build_workflow_graph(
         plan_generator=fake_planner,
@@ -112,9 +129,13 @@ def test_invalid_plan_does_not_execute_tasks():
 
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     graph = build_workflow_graph(
         plan_generator=fake_planner,
@@ -158,11 +179,15 @@ def test_failed_task_skips_dependent_in_graph():
 
     executed_ids = []
 
-    def failing_runner(task):
+    def failing_runner(task, dependency_results):
         executed_ids.append(task.task_id)
         if task.task_id == "T1":
             raise RuntimeError("Pricing source unavailable")
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     graph = build_workflow_graph(
         plan_generator=fake_planner,

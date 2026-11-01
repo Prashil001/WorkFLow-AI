@@ -8,9 +8,12 @@ from app.workflow_engine.mock_tools import (
 from app.workflow_engine.schemas import PlannedTask
 
 
-def test_search_pricing_documents_returns_ranked_fictional_matches():
+def test_search_pricing_documents_returns_ranked_fictional_matches(offline_retriever):
     result = json.loads(
-        search_pricing_documents("Northstar Labs implementation pricing")
+        search_pricing_documents(
+            "Northstar Labs implementation pricing",
+            retriever=offline_retriever,
+        )
     )
 
     assert result["source"] == "mock_local_dataset"
@@ -18,9 +21,12 @@ def test_search_pricing_documents_returns_ranked_fictional_matches():
     assert "fictional sample data" in result["notice"]
 
 
-def test_search_pricing_documents_returns_empty_for_no_match():
+def test_search_pricing_documents_returns_empty_for_no_match(offline_retriever):
     result = json.loads(
-        search_pricing_documents("unlisted client quantum yacht")
+        search_pricing_documents(
+            "unlisted client quantum yacht",
+            retriever=offline_retriever,
+        )
     )
 
     assert result["matches"] == []
@@ -37,7 +43,7 @@ def test_calendar_tool_filters_by_date_and_time_of_day():
     assert "not a live calendar" in result["notice"]
 
 
-def test_executor_dispatches_read_only_task_types_to_tools():
+def test_executor_dispatches_read_only_task_types_to_tools(offline_retriever):
     task = PlannedTask(
         task_id="T1",
         task_type="retrieve_documents",
@@ -45,7 +51,7 @@ def test_executor_dispatches_read_only_task_types_to_tools():
         depends_on=[],
     )
 
-    result = execute_task(task)
+    result = execute_task(task, retriever=offline_retriever)
 
     assert result.status == "SIMULATED"
     assert "mock-pricing-001" in result.result

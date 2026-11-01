@@ -19,8 +19,10 @@ from app.workflow_engine.executor import TaskRunner, execute_task
 
 def build_workflow_graph(
         plan_generator: Callable[[str], WorkflowPlan] = generate_plan,
-        task_runner: TaskRunner = execute_task,
+        task_runner: TaskRunner | None = None,
 ):
+    if task_runner is None:
+        task_runner = execute_task
     
     builder = StateGraph(WorkflowGraphState)
 

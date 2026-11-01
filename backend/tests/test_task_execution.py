@@ -14,7 +14,7 @@ def make_plan(tasks, missing_information=None):
     )
 
 
-def test_draft_task_returns_simulated_result():
+def test_draft_task_without_retrieved_sources_fails_safely():
     task = PlannedTask(
         task_id="T1",
         task_type="draft_email",
@@ -26,8 +26,8 @@ def test_draft_task_returns_simulated_result():
 
     assert result == TaskExecutionResult(
         task_id="T1",
-        status="SIMULATED",
-        result="Simulated draft_email task: Draft a follow-up email",
+        status="FAILED",
+        error="No retrieved source documents are available for a grounded draft",
     )
 
 
@@ -48,9 +48,13 @@ def test_execute_plan_follows_validated_order():
     ])
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     results = execute_plan(
         plan,
@@ -88,11 +92,15 @@ def test_failed_task_skips_dependents_and_continues_independent_tasks():
     ])
     executed_ids = []
 
-    def failing_runner(task):
+    def failing_runner(task, dependency_results):
         executed_ids.append(task.task_id)
         if task.task_id == "T1":
             raise RuntimeError("Pricing source unavailable")
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     results = execute_plan(
         plan,
@@ -124,9 +132,13 @@ def test_plan_with_missing_information_does_not_execute():
     )
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     results = execute_plan(
         plan,

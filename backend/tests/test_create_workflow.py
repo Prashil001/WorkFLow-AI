@@ -18,8 +18,11 @@ from app.db.base import Base
 from app.db.session import get_db_session
 from app.main import app
 from app.models.user import User
-from app.workflow_engine.executor import execute_task
-from app.workflow_engine.schemas import PlannedTask, WorkflowPlan
+from app.workflow_engine.schemas import (
+    PlannedTask,
+    TaskExecutionResult,
+    WorkflowPlan,
+)
 
 
 @pytest.fixture
@@ -480,6 +483,7 @@ def test_unexpected_errors_are_sanitized(
 
 def test_execute_workflow_returns_results_and_prevents_duplicate_runs(
     test_user_id,
+    offline_task_runner,
 ):
     def fake_planner(request: str) -> WorkflowPlan:
         return WorkflowPlan(
@@ -498,6 +502,9 @@ def test_execute_workflow_returns_results_and_prevents_duplicate_runs(
     app.dependency_overrides[require_workflow_executor] = lambda: None
     app.dependency_overrides[get_workflow_plan_generator] = (
         lambda: fake_planner
+    )
+    app.dependency_overrides[get_workflow_task_runner] = (
+        lambda: offline_task_runner
     )
 
     try:
@@ -538,6 +545,10 @@ def test_execute_workflow_returns_results_and_prevents_duplicate_runs(
             get_workflow_plan_generator,
             None,
         )
+        app.dependency_overrides.pop(
+            get_workflow_task_runner,
+            None,
+        )
 
 
 def test_execute_workflow_waits_for_missing_information(
@@ -559,9 +570,13 @@ def test_execute_workflow_waits_for_missing_information(
 
     executed_ids = []
 
-    def recording_runner(task):
+    def recording_runner(task, dependency_results):
         executed_ids.append(task.task_id)
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     app.dependency_overrides[require_workflow_executor] = lambda: None
     app.dependency_overrides[get_workflow_plan_generator] = (
@@ -629,10 +644,14 @@ def test_execute_workflow_persists_partial_success(test_user_id):
             ],
         )
 
-    def failing_runner(task):
+    def failing_runner(task, dependency_results):
         if task.task_id == "T1":
             raise RuntimeError("Pricing source unavailable")
-        return execute_task(task)
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=f"Test output for {task.task_id}",
+        )
 
     app.dependency_overrides[require_workflow_executor] = lambda: None
     app.dependency_overrides[get_workflow_plan_generator] = (
