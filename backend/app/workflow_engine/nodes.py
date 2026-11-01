@@ -1,5 +1,10 @@
 from app.workflow_engine.state import WorkflowGraphState
 from app.workflow_engine.schemas import WorkflowPlan
+from app.workflow_engine.executor import (
+    TaskRunner,
+    execute_plan,
+    execute_task,
+)
 from app.workflow_engine.validation import (
     PlanValidationError,
     get_execution_order,
@@ -113,3 +118,26 @@ def mark_ready(
     return {
         "planning_outcome": "READY"
     }
+
+
+def make_execution_node(
+    task_runner: TaskRunner = execute_task,
+):
+    def execute_validated_plan(
+        state: WorkflowGraphState,
+    ) -> dict[str, list[dict[str, Any]]]:
+        plan = WorkflowPlan.model_validate(state["plan"])
+        results = execute_plan(
+            plan,
+            state["execution_order"],
+            task_runner=task_runner,
+        )
+
+        return {
+            "execution_results": [
+                result.model_dump(mode="json")
+                for result in results
+            ]
+        }
+
+    return execute_validated_plan

@@ -13,10 +13,13 @@ from app.workflow_engine.nodes import (
     route_after_validation,
     mark_needs_input,
     mark_ready,
+    make_execution_node,
 )
+from app.workflow_engine.executor import TaskRunner, execute_task
 
 def build_workflow_graph(
         plan_generator: Callable[[str], WorkflowPlan] = generate_plan,
+        task_runner: TaskRunner = execute_task,
 ):
     
     builder = StateGraph(WorkflowGraphState)
@@ -51,6 +54,11 @@ def build_workflow_graph(
         mark_ready,
     )
 
+    builder.add_node(
+        "execute_tasks",
+        make_execution_node(task_runner),
+    )
+
     builder.add_edge(START, "normalize_request")
     builder.add_edge("normalize_request", "validate_request")
     builder.add_edge("validate_request","plan_tasks")
@@ -75,6 +83,11 @@ def build_workflow_graph(
 
     builder.add_edge(
         "mark_ready",
+        "execute_tasks",
+    )
+
+    builder.add_edge(
+        "execute_tasks",
         END,
     )
 

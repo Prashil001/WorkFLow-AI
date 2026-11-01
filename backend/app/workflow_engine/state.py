@@ -6,6 +6,7 @@ class WorkflowGraphState(TypedDict):
     is_valid: NotRequired[bool]
     plan: NotRequired[dict[str, Any]]
     execution_order: NotRequired[list[str]]
+    execution_results: NotRequired[list[dict[str, Any]]]
     planning_outcome: NotRequired[
         Literal["NEEDS_INPUT", "READY"]
     ]
