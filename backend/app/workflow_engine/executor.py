@@ -5,6 +5,7 @@ from app.workflow_engine.schemas import (
     TaskExecutionResult,
     WorkflowPlan,
 )
+from app.workflow_engine.mock_tools import run_read_only_tool
 
 
 TaskRunner = Callable[[PlannedTask], TaskExecutionResult]
@@ -12,6 +13,14 @@ TaskRunner = Callable[[PlannedTask], TaskExecutionResult]
 
 def execute_task(task: PlannedTask) -> TaskExecutionResult:
     """Return a deterministic mock result for one planned task."""
+    tool_result = run_read_only_tool(task)
+    if tool_result is not None:
+        return TaskExecutionResult(
+            task_id=task.task_id,
+            status="SIMULATED",
+            result=tool_result,
+        )
+
     return TaskExecutionResult(
         task_id=task.task_id,
         status="SIMULATED",

@@ -1,0 +1,48 @@
+{
+  "pricing_documents": [
+    {
+      "document_id": "mock-pricing-001",
+      "client": "Northstar Labs",
+      "title": "2026 Standard Pricing Guide",
+      "content": "Fictional sample pricing: implementation packages range from USD 12,000 to USD 18,000. The standard subscription is USD 1,250 per month. Annual prepayment receives a 10 percent discount."
+    },
+    {
+      "document_id": "mock-pricing-002",
+      "client": "Cedar Retail",
+      "title": "Retail Proposal Pricing Example",
+      "content": "Fictional sample pricing: a retail analytics implementation is USD 15,000 with a USD 1,400 monthly subscription. Optional training is USD 2,000."
+    },
+    {
+      "document_id": "mock-pricing-003",
+      "client": "Bluebird Health",
+      "title": "Healthcare Services Pricing Example",
+      "content": "Fictional sample pricing: the healthcare onboarding package is USD 20,000 and the monthly subscription is USD 1,800. This example includes a 30-day implementation period."
+    }
+  ],
+  "calendar_slots": [
+    {
+      "slot_id": "mock-slot-001",
+      "date": "2026-11-04",
+      "time": "09:00",
+      "available": true
+    },
+    {
+      "slot_id": "mock-slot-002",
+      "date": "2026-11-04",
+      "time": "14:00",
+      "available": true
+    },
+    {
+      "slot_id": "mock-slot-003",
+      "date": "2026-11-05",
+      "time": "11:00",
+      "available": true
+    },
+    {
+      "slot_id": "mock-slot-004",
+      "date": "2026-11-06",
+      "time": "15:00",
+      "available": true
+    }
+  ]
+}

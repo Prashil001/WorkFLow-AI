@@ -14,11 +14,11 @@ def make_plan(tasks, missing_information=None):
     )
 
 
-def test_execute_task_returns_simulated_result():
+def test_draft_task_returns_simulated_result():
     task = PlannedTask(
         task_id="T1",
-        task_type="retrieve_documents",
-        description="Find previous pricing",
+        task_type="draft_email",
+        description="Draft a follow-up email",
         depends_on=[],
     )
 
@@ -27,7 +27,7 @@ def test_execute_task_returns_simulated_result():
     assert result == TaskExecutionResult(
         task_id="T1",
         status="SIMULATED",
-        result="Simulated retrieve_documents task: Find previous pricing",
+        result="Simulated draft_email task: Draft a follow-up email",
     )
 
 
