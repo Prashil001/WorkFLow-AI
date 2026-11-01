@@ -10,6 +10,9 @@ from app.workflow_engine.nodes import (
     validate_request,
     make_plan_node,
     validate_ai_plan,
+    route_after_validation,
+    mark_needs_input,
+    mark_ready,
 )
 
 def build_workflow_graph(
@@ -38,6 +41,16 @@ def build_workflow_graph(
         make_plan_node(plan_generator)
     )
 
+    builder.add_node(
+        "mark_needs_input",
+        mark_needs_input,
+    )
+
+    builder.add_node(
+        "mark_ready",
+        mark_ready,
+    )
+
     builder.add_edge(START, "normalize_request")
     builder.add_edge("normalize_request", "validate_request")
     builder.add_edge("validate_request","plan_tasks")
@@ -45,8 +58,23 @@ def build_workflow_graph(
         "plan_tasks",
         "validate_ai_plan",
     )
-    builder.add_edge(
+
+    builder.add_conditional_edges(
         "validate_ai_plan",
+        route_after_validation,
+        {
+            "needs_input": "mark_needs_input",
+            "ready": "mark_ready",
+        },
+    )
+
+    builder.add_edge(
+        "mark_needs_input",
+        END,
+    )
+
+    builder.add_edge(
+        "mark_ready",
         END,
     )
 

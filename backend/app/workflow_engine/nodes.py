@@ -7,7 +7,7 @@ from app.workflow_engine.validation import (
 
 from pydantic import ValidationError
 
-from typing import Any
+from typing import Any, Literal
 from collections.abc import Callable
 
 def normalize_request(
@@ -78,4 +78,38 @@ def validate_ai_plan(
     # Save the result in LangGraph state.
     return {
         "execution_order": execution_order
+    }
+
+
+
+def route_after_validation(
+    state: WorkflowGraphState,
+) -> Literal["needs_input", "ready"]:
+
+    missing_information = (
+        state["plan"]["missing_information"]
+    )
+
+    if missing_information:
+        return "needs_input"
+
+    return "ready"
+
+
+
+def mark_needs_input(
+    state: WorkflowGraphState,
+) -> dict[str, str]:
+
+    return {
+        "planning_outcome": "NEEDS_INPUT"
+    }
+
+
+def mark_ready(
+    state: WorkflowGraphState,
+) -> dict[str, str]:
+
+    return {
+        "planning_outcome": "READY"
     }
