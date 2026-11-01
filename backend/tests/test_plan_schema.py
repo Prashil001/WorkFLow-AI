@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from app.workflow_engine.schemas import (
     PlannedTask,
+    TaskExecutionResult,
     WorkflowPlan,
 )
 
@@ -59,3 +60,24 @@ def test_rejects_missing_fields():
             "summary": "Prepare a proposal",
             "tasks": [],
         })
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["SIMULATED", "FAILED", "SKIPPED"],
+)
+def test_execution_result_accepts_known_status(status):
+    result = TaskExecutionResult(
+        task_id="T1",
+        status=status,
+    )
+
+    assert result.status == status
+
+
+def test_execution_result_rejects_unknown_status():
+    with pytest.raises(ValidationError):
+        TaskExecutionResult(
+            task_id="T1",
+            status="COMPLETED",
+        )

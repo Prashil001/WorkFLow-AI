@@ -10,6 +10,12 @@ TaskType = Literal[
     "create_follow_up",
 ]
 
+TaskExecutionStatus = Literal[
+    "SIMULATED",
+    "FAILED",
+    "SKIPPED",
+]
+
 class PlannedTask(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -27,6 +33,28 @@ class PlannedTask(BaseModel):
 
     depends_on: list[str] = Field(
         description="IDs of task that must finish first"
+    )
+
+
+class TaskExecutionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    task_id: str = Field(
+        description="ID of the task that produced this result"
+    )
+
+    status: TaskExecutionStatus = Field(
+        description="Outcome of the simulated task execution"
+    )
+
+    result: str | None = Field(
+        default=None,
+        description="Simulated output when the task completes",
+    )
+
+    error: str | None = Field(
+        default=None,
+        description="Failure or skip reason when execution does not complete",
     )
 
 
