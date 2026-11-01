@@ -9,7 +9,10 @@ from app.main import app
 
 def test_requires_authentication():
     with TestClient(app) as client:
-        response = client.get("/api/v1/workflows/")
+        response = client.get(
+            "/api/v1/workflows/",
+            headers={"X-User-ID": str(uuid4())},
+        )
 
     assert response.status_code == 401
 

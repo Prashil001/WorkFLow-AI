@@ -142,7 +142,7 @@ def execute_plan(
                 task_result = TaskExecutionResult(
                     task_id=task.task_id,
                     status="FAILED",
-                    error=str(exc) or type(exc).__name__,
+                    error=f"Task execution failed ({type(exc).__name__})",
                 )
 
             if task_result.task_id != task.task_id:

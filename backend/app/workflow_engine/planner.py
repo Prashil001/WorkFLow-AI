@@ -19,6 +19,11 @@ JSON output rules:
 - "missing_information" MUST be an array of strings.
 - Each task must contain task_id, task_type,
   description, and depends_on.
+- A plan may contain at most 25 tasks.
+- Keep task IDs between 1 and 32 characters.
+- Keep each task description at or below 1000 characters.
+- A plan summary may contain at most 500 characters.
+- Return at most 10 missing-information questions.
 - "depends_on" MUST be an array of task ID strings.
 - If the user has not identified the client,
   include that in missing_information.
@@ -55,8 +60,8 @@ def create_planner() -> Any:
         model=settings.groq_model,
         api_key=settings.groq_api_key.get_secret_value(),
         temperature=0,
-        timeout=30,
-        max_retries=0,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
     )
 
     return llm.with_structured_output(

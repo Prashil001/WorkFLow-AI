@@ -10,6 +10,7 @@ from langchain_core.messages import (
 )
 
 import app.workflow_engine.planner as planner_module
+import app.workflow_engine.drafting as drafting_module
 
 from app.workflow_engine.graph import build_workflow_graph
 from app.workflow_engine.planner import (
@@ -17,6 +18,8 @@ from app.workflow_engine.planner import (
     generate_plan,
 )
 from app.workflow_engine.schemas import WorkflowPlan
+from app.workflow_engine.schemas import PlannedTask
+from pydantic import SecretStr
 
 
 def example_plan() -> WorkflowPlan:
@@ -180,3 +183,67 @@ def test_missing_api_key(monkeypatch):
         match="GROQ_API_KEY is not configured",
     ):
         planner_module.create_planner()
+
+
+def test_planner_uses_a_bounded_retry_and_timeout(monkeypatch):
+    settings = SimpleNamespace(
+        groq_api_key=SecretStr("test-key"),
+        groq_model="test-model",
+        llm_timeout_seconds=12,
+        llm_max_retries=1,
+    )
+    monkeypatch.setattr(planner_module, "get_settings", lambda: settings)
+    fake_model = Mock()
+    fake_model.with_structured_output.return_value = "configured-planner"
+    constructor = Mock(return_value=fake_model)
+    monkeypatch.setattr(planner_module, "ChatGroq", constructor)
+
+    assert planner_module.create_planner() == "configured-planner"
+    constructor.assert_called_once_with(
+        model="test-model",
+        api_key="test-key",
+        temperature=0,
+        timeout=12,
+        max_retries=1,
+    )
+
+
+def test_drafting_model_uses_the_same_retry_and_timeout_limits(monkeypatch):
+    settings = SimpleNamespace(
+        groq_api_key=SecretStr("test-key"),
+        groq_model="test-model",
+        llm_timeout_seconds=9,
+        llm_max_retries=1,
+    )
+    monkeypatch.setattr(drafting_module, "get_settings", lambda: settings)
+    fake_model = Mock()
+    fake_model.invoke.return_value = SimpleNamespace(
+        content="A grounded draft [source:mock-pricing-001]."
+    )
+    constructor = Mock(return_value=fake_model)
+    monkeypatch.setattr(drafting_module, "ChatGroq", constructor)
+
+    output = drafting_module.generate_grounded_draft(
+        PlannedTask(
+            task_id="T1",
+            task_type="draft_proposal",
+            description="Draft a proposal",
+            depends_on=[],
+        ),
+        [{
+            "document_id": "mock-pricing-001",
+            "title": "Pricing Guide",
+            "client": "Northstar Labs",
+            "content": "Implementation packages range from USD 12,000 to USD 18,000.",
+        }],
+        {},
+    )
+
+    assert "[source:mock-pricing-001]" in output
+    constructor.assert_called_once_with(
+        model="test-model",
+        api_key="test-key",
+        temperature=0,
+        timeout=9,
+        max_retries=1,
+    )

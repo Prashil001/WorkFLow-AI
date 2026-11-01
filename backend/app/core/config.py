@@ -1,7 +1,9 @@
 from functools import lru_cache
 import os
-from typing import  Literal
-from pydantic import SecretStr
+from typing import Literal
+from uuid import UUID
+
+from pydantic import Field, SecretStr
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,9 +22,15 @@ class Settings(BaseSettings):
 
     groq_api_key: SecretStr | None = None
     groq_model: str = "openai/gpt-oss-20b"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    llm_max_retries: int = Field(default=1, ge=0, le=2)
     langsmith_tracing: bool = False
     langsmith_api_key: SecretStr | None = None
     langsmith_project: str = "workflow-ai"
+    workflow_api_token: SecretStr | None = None
+    workflow_executor_token: SecretStr | None = None
+    workflow_user_id: UUID = UUID("00000000-0000-4000-8000-000000000001")
+    workflow_user_email: str = "workflow-ai@example.local"
 
     model_config = SettingsConfigDict(
         env_file=".env",

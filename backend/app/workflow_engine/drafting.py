@@ -38,8 +38,8 @@ def generate_grounded_draft(
         model=settings.groq_model,
         api_key=settings.groq_api_key.get_secret_value(),
         temperature=0,
-        timeout=30,
-        max_retries=0,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
     )
     response = model.invoke([
         SystemMessage(content=(
@@ -48,7 +48,8 @@ def generate_grounded_draft(
             "with the exact source ID in brackets, such as "
             "[source:mock-pricing-001]. Do not invent names, prices, dates, "
             "or commitments. If the sources do not answer something, say it "
-            "needs confirmation. Produce a draft only; do not send or publish it."
+            "needs confirmation. Keep the draft concise and below 6000 "
+            "characters. Produce a draft only; do not send or publish it."
         )),
         HumanMessage(content=(
             f"Task: {task.description}\n\n"

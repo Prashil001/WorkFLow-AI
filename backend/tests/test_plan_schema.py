@@ -81,3 +81,32 @@ def test_execution_result_rejects_unknown_status():
             task_id="T1",
             status="COMPLETED",
         )
+
+
+def test_plan_rejects_more_than_25_tasks():
+    tasks = [
+        PlannedTask(
+            task_id=f"T{index}",
+            task_type="check_calendar",
+            description="Check availability",
+            depends_on=[],
+        )
+        for index in range(26)
+    ]
+
+    with pytest.raises(ValidationError):
+        WorkflowPlan(
+            summary="Oversized plan",
+            missing_information=[],
+            tasks=tasks,
+        )
+
+
+def test_task_description_has_a_maximum_length():
+    with pytest.raises(ValidationError):
+        PlannedTask(
+            task_id="T1",
+            task_type="check_calendar",
+            description="x" * 1001,
+            depends_on=[],
+        )

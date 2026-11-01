@@ -95,7 +95,7 @@ def test_failed_task_skips_dependents_and_continues_independent_tasks():
     def failing_runner(task, dependency_results):
         executed_ids.append(task.task_id)
         if task.task_id == "T1":
-            raise RuntimeError("Pricing source unavailable")
+            raise RuntimeError("SENSITIVE_PROVIDER_DETAILS")
         return TaskExecutionResult(
             task_id=task.task_id,
             status="SIMULATED",
@@ -114,7 +114,8 @@ def test_failed_task_skips_dependents_and_continues_independent_tasks():
         "SKIPPED",
         "SIMULATED",
     ]
-    assert results[0].error == "Pricing source unavailable"
+    assert results[0].error == "Task execution failed (RuntimeError)"
+    assert "SENSITIVE_PROVIDER_DETAILS" not in results[0].error
     assert results[1].error == "Dependency T1 did not complete successfully"
 
 
