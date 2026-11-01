@@ -248,6 +248,10 @@ def execute_existing_workflow(
     try:
         state = graph.invoke({
             "original_request": original_request,
+        }, config={
+            "run_name": "workflow_execution",
+            "tags": ["workflow-ai", "api"],
+            "metadata": {"workflow_id": str(workflow_id)},
         })
         plan = WorkflowPlan.model_validate(state["plan"])
         execution_results = state.get("execution_results", [])

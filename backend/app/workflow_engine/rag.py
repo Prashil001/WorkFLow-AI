@@ -91,7 +91,7 @@ class InMemoryRetriever:
         *,
         chunk_size: int = 22,
         overlap: int = 5,
-        minimum_score: float = 0.25,
+        minimum_score: float = 0.70,
     ) -> None:
         self.chunks = chunk_documents(
             documents,
@@ -177,8 +177,13 @@ def retrieve_pricing_documents(
     retriever: InMemoryRetriever | None = None,
 ) -> list[dict[str, object]]:
     active_retriever = retriever or get_default_retriever()
-    return [
-        {
+    matches = []
+    seen_source_ids = set()
+    for chunk in active_retriever.retrieve(query, limit=limit):
+        if chunk.source_id in seen_source_ids:
+            continue
+        seen_source_ids.add(chunk.source_id)
+        matches.append({
             "source_id": chunk.source_id,
             "document_id": chunk.source_id,
             "client": chunk.client,
@@ -186,6 +191,5 @@ def retrieve_pricing_documents(
             "chunk_index": chunk.chunk_index,
             "text": chunk.text,
             "score": round(chunk.score, 4),
-        }
-        for chunk in active_retriever.retrieve(query, limit=limit)
-    ]
+        })
+    return matches

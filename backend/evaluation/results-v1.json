@@ -1,0 +1,176 @@
+{
+  "dataset": {
+    "name": "workflow-ai-regression",
+    "version": 1,
+    "sha256": "7020bdb0b01edd35c07040af3f3926be11d31c83713448a3101e3f39d8e47c99"
+  },
+  "evaluated_at": "2026-11-01T04:14:35.129466+00:00",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "summary": {
+    "passed_cases": 11,
+    "total_cases": 11,
+    "pass_rate": 1.0,
+    "all_passed": true
+  },
+  "suites": {
+    "planning": {
+      "case_count": 3,
+      "passed_count": 3,
+      "pass_rate": 1.0,
+      "all_passed": true,
+      "cases": [
+        {
+          "id": "ready-proposal",
+          "passed": true,
+          "expected_outcome": "READY",
+          "observed_outcome": "READY",
+          "expected_order": [
+            "T1",
+            "T3",
+            "T2"
+          ],
+          "observed_order": [
+            "T1",
+            "T3",
+            "T2"
+          ]
+        },
+        {
+          "id": "needs-client-clarification",
+          "passed": true,
+          "expected_outcome": "NEEDS_INPUT",
+          "observed_outcome": "NEEDS_INPUT",
+          "expected_order": [],
+          "observed_order": []
+        },
+        {
+          "id": "circular-plan-rejected",
+          "passed": true,
+          "expected_outcome": "INVALID",
+          "observed_outcome": "INVALID",
+          "expected_order": null,
+          "observed_order": null
+        }
+      ]
+    },
+    "execution": {
+      "case_count": 2,
+      "passed_count": 2,
+      "pass_rate": 1.0,
+      "all_passed": true,
+      "cases": [
+        {
+          "id": "dependency-order-success",
+          "passed": true,
+          "observed_order": [
+            "T1",
+            "T2"
+          ],
+          "observed_statuses": {
+            "T1": "SIMULATED",
+            "T2": "SIMULATED"
+          }
+        },
+        {
+          "id": "dependent-skipped-after-failure",
+          "passed": true,
+          "observed_order": [
+            "T1",
+            "T3",
+            "T2"
+          ],
+          "observed_statuses": {
+            "T1": "FAILED",
+            "T3": "SIMULATED",
+            "T2": "SKIPPED"
+          }
+        }
+      ]
+    },
+    "retrieval": {
+      "case_count": 4,
+      "passed_count": 4,
+      "pass_rate": 1.0,
+      "all_passed": true,
+      "cases": [
+        {
+          "id": "northstar-pricing",
+          "passed": true,
+          "expected_source_id": "mock-pricing-001",
+          "observed_source_ids": [
+            "mock-pricing-001"
+          ],
+          "top_1_hit": true,
+          "top_3_hit": true
+        },
+        {
+          "id": "cedar-retail-pricing",
+          "passed": true,
+          "expected_source_id": "mock-pricing-002",
+          "observed_source_ids": [
+            "mock-pricing-002"
+          ],
+          "top_1_hit": true,
+          "top_3_hit": true
+        },
+        {
+          "id": "bluebird-health-pricing",
+          "passed": true,
+          "expected_source_id": "mock-pricing-003",
+          "observed_source_ids": [
+            "mock-pricing-003"
+          ],
+          "top_1_hit": true,
+          "top_3_hit": true
+        },
+        {
+          "id": "unrelated-query",
+          "passed": true,
+          "expected_source_id": null,
+          "observed_source_ids": [],
+          "top_1_hit": null,
+          "top_3_hit": null
+        }
+      ],
+      "metrics": {
+        "positive_query_count": 3,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "precision_at_3": 1.0,
+        "negative_query_count": 1,
+        "correct_empty_rate": 1.0
+      }
+    },
+    "grounding": {
+      "case_count": 2,
+      "passed_count": 2,
+      "pass_rate": 1.0,
+      "all_passed": true,
+      "cases": [
+        {
+          "id": "citation-from-retrieved-source",
+          "passed": true,
+          "expected_integrity": true,
+          "observed_integrity": true,
+          "cited_source_ids": [
+            "mock-pricing-001"
+          ]
+        },
+        {
+          "id": "citation-outside-retrieved-sources",
+          "passed": true,
+          "expected_integrity": false,
+          "observed_integrity": false,
+          "cited_source_ids": [
+            "mock-pricing-003"
+          ]
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Planning cases validate labeled plans and do not measure live LLM planner quality.",
+    "Grounding checks citation ID integrity, not the truth of every generated sentence.",
+    "The retrieval set is small and synthetic; its scores are a regression signal, not a broad benchmark."
+  ]
+}

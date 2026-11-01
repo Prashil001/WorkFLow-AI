@@ -1,0 +1,103 @@
+{
+  "dataset_name": "workflow-ai-regression",
+  "version": 1,
+  "description": "Small, labeled regression set for plan validation, dependency execution, retrieval, and citation integrity.",
+  "planning_cases": [
+    {
+      "id": "ready-proposal",
+      "plan": {
+        "summary": "Prepare a proposal and check availability",
+        "missing_information": [],
+        "tasks": [
+          {"task_id": "T2", "task_type": "draft_proposal", "description": "Draft a proposal", "depends_on": ["T1"]},
+          {"task_id": "T1", "task_type": "retrieve_documents", "description": "Find client pricing", "depends_on": []},
+          {"task_id": "T3", "task_type": "check_calendar", "description": "Check availability", "depends_on": []}
+        ]
+      },
+      "expected_outcome": "READY",
+      "expected_task_types": ["draft_proposal", "retrieve_documents", "check_calendar"],
+      "expected_dependencies": {"T1": [], "T2": ["T1"], "T3": []},
+      "expected_order": ["T1", "T3", "T2"]
+    },
+    {
+      "id": "needs-client-clarification",
+      "plan": {
+        "summary": "Need to know which client",
+        "missing_information": ["Which client is this for?"],
+        "tasks": []
+      },
+      "expected_outcome": "NEEDS_INPUT",
+      "expected_task_types": [],
+      "expected_dependencies": {},
+      "expected_order": []
+    },
+    {
+      "id": "circular-plan-rejected",
+      "plan": {
+        "summary": "Invalid circular plan",
+        "missing_information": [],
+        "tasks": [
+          {"task_id": "T1", "task_type": "retrieve_documents", "description": "Retrieve pricing", "depends_on": ["T2"]},
+          {"task_id": "T2", "task_type": "draft_proposal", "description": "Draft proposal", "depends_on": ["T1"]}
+        ]
+      },
+      "expected_outcome": "INVALID",
+      "expected_task_types": ["retrieve_documents", "draft_proposal"],
+      "expected_dependencies": {"T1": ["T2"], "T2": ["T1"]},
+      "expected_order": null
+    }
+  ],
+  "execution_cases": [
+    {
+      "id": "dependency-order-success",
+      "plan": {
+        "summary": "Prepare proposal",
+        "missing_information": [],
+        "tasks": [
+          {"task_id": "T2", "task_type": "draft_proposal", "description": "Draft proposal", "depends_on": ["T1"]},
+          {"task_id": "T1", "task_type": "retrieve_documents", "description": "Retrieve pricing", "depends_on": []}
+        ]
+      },
+      "failed_task_ids": [],
+      "expected_order": ["T1", "T2"],
+      "expected_statuses": {"T1": "SIMULATED", "T2": "SIMULATED"}
+    },
+    {
+      "id": "dependent-skipped-after-failure",
+      "plan": {
+        "summary": "Prepare proposal and check availability",
+        "missing_information": [],
+        "tasks": [
+          {"task_id": "T1", "task_type": "retrieve_documents", "description": "Retrieve pricing", "depends_on": []},
+          {"task_id": "T2", "task_type": "draft_proposal", "description": "Draft proposal", "depends_on": ["T1"]},
+          {"task_id": "T3", "task_type": "check_calendar", "description": "Check availability", "depends_on": []}
+        ]
+      },
+      "failed_task_ids": ["T1"],
+      "expected_order": ["T1", "T3", "T2"],
+      "expected_statuses": {"T1": "FAILED", "T2": "SKIPPED", "T3": "SIMULATED"}
+    }
+  ],
+  "retrieval_cases": [
+    {"id": "northstar-pricing", "query": "Northstar Labs standard pricing and implementation package", "expected_source_id": "mock-pricing-001"},
+    {"id": "cedar-retail-pricing", "query": "Cedar Retail analytics subscription and training", "expected_source_id": "mock-pricing-002"},
+    {"id": "bluebird-health-pricing", "query": "Bluebird Health healthcare onboarding and implementation period", "expected_source_id": "mock-pricing-003"},
+    {"id": "unrelated-query", "query": "unlisted client quantum yacht", "expected_source_id": null}
+  ],
+  "grounding_cases": [
+    {
+      "id": "citation-from-retrieved-source",
+      "draft": "Implementation packages range from USD 12,000 to USD 18,000 [source:mock-pricing-001].",
+      "allowed_source_ids": ["mock-pricing-001"],
+      "required_source_ids": ["mock-pricing-001"],
+      "expected_integrity": true
+    },
+    {
+      "id": "citation-outside-retrieved-sources",
+      "draft": "The subscription is USD 1,800 per month [source:mock-pricing-003].",
+      "allowed_source_ids": ["mock-pricing-001"],
+      "required_source_ids": ["mock-pricing-001"],
+      "expected_integrity": false
+    }
+  ]
+}
