@@ -11,6 +11,8 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "RUNNING": {
         "WAITING_FOR_INPUT",
         "WAITING_FOR_APPROVAL",
+        "COMPLETED",
+        "PARTIAL_SUCCESS",
         "FAILED",
     },
     "WAITING_FOR_INPUT": {

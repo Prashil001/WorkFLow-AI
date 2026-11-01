@@ -9,11 +9,17 @@ from sqlalchemy.pool import StaticPool
 
 import app.models
 from app.api.dependencies import get_current_user_id
+from app.api.dependencies import (
+    get_workflow_plan_generator,
+    get_workflow_task_runner,
+)
 from app.api.dependencies import require_workflow_executor
 from app.db.base import Base
 from app.db.session import get_db_session
 from app.main import app
 from app.models.user import User
+from app.workflow_engine.executor import execute_task
+from app.workflow_engine.schemas import PlannedTask, WorkflowPlan
 
 
 @pytest.fixture
@@ -247,7 +253,7 @@ def test_workflow_status_transitions(test_user_id):
                 url,
                 json={
                     "expected_status": "RUNNING",
-                    "new_status": "COMPLETED",
+                    "new_status": "CANCELLED",
                 },
             )
 
@@ -470,3 +476,258 @@ def test_unexpected_errors_are_sanitized(
         app.dependency_overrides[
             get_db_session
         ] = original_override
+
+
+def test_execute_workflow_returns_results_and_prevents_duplicate_runs(
+    test_user_id,
+):
+    def fake_planner(request: str) -> WorkflowPlan:
+        return WorkflowPlan(
+            summary="Prepare client proposal",
+            missing_information=[],
+            tasks=[
+                PlannedTask(
+                    task_id="T1",
+                    task_type="retrieve_documents",
+                    description="Find previous pricing",
+                    depends_on=[],
+                ),
+            ],
+        )
+
+    app.dependency_overrides[require_workflow_executor] = lambda: None
+    app.dependency_overrides[get_workflow_plan_generator] = (
+        lambda: fake_planner
+    )
+
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/api/v1/workflows/",
+                json={
+                    "original_request": "Prepare a client proposal"
+                },
+            )
+            workflow_id = created.json()["id"]
+
+            response = client.post(
+                f"/api/v1/workflows/{workflow_id}/execute"
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "COMPLETED"
+            assert data["planning_outcome"] == "READY"
+            assert data["execution_results"][0]["status"] == "SIMULATED"
+
+            duplicate = client.post(
+                f"/api/v1/workflows/{workflow_id}/execute"
+            )
+            assert duplicate.status_code == 409
+
+            saved = client.get(
+                f"/api/v1/workflows/{workflow_id}"
+            )
+            assert saved.json()["status"] == "COMPLETED"
+    finally:
+        app.dependency_overrides.pop(
+            require_workflow_executor,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_plan_generator,
+            None,
+        )
+
+
+def test_execute_workflow_waits_for_missing_information(
+    test_user_id,
+):
+    def fake_planner(request: str) -> WorkflowPlan:
+        return WorkflowPlan(
+            summary="Need client information",
+            missing_information=["Which client is this for?"],
+            tasks=[
+                PlannedTask(
+                    task_id="T1",
+                    task_type="retrieve_documents",
+                    description="Find previous pricing",
+                    depends_on=[],
+                ),
+            ],
+        )
+
+    executed_ids = []
+
+    def recording_runner(task):
+        executed_ids.append(task.task_id)
+        return execute_task(task)
+
+    app.dependency_overrides[require_workflow_executor] = lambda: None
+    app.dependency_overrides[get_workflow_plan_generator] = (
+        lambda: fake_planner
+    )
+    app.dependency_overrides[get_workflow_task_runner] = (
+        lambda: recording_runner
+    )
+
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/api/v1/workflows/",
+                json={"original_request": "Prepare a proposal"},
+            )
+            workflow_id = created.json()["id"]
+
+            response = client.post(
+                f"/api/v1/workflows/{workflow_id}/execute"
+            )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "WAITING_FOR_INPUT"
+        assert response.json()["execution_results"] == []
+        assert executed_ids == []
+    finally:
+        app.dependency_overrides.pop(
+            require_workflow_executor,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_plan_generator,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_task_runner,
+            None,
+        )
+
+
+def test_execute_workflow_persists_partial_success(test_user_id):
+    def fake_planner(request: str) -> WorkflowPlan:
+        return WorkflowPlan(
+            summary="Prepare proposal and check calendar",
+            missing_information=[],
+            tasks=[
+                PlannedTask(
+                    task_id="T1",
+                    task_type="retrieve_documents",
+                    description="Find previous pricing",
+                    depends_on=[],
+                ),
+                PlannedTask(
+                    task_id="T2",
+                    task_type="draft_proposal",
+                    description="Draft proposal",
+                    depends_on=["T1"],
+                ),
+                PlannedTask(
+                    task_id="T3",
+                    task_type="check_calendar",
+                    description="Check availability",
+                    depends_on=[],
+                ),
+            ],
+        )
+
+    def failing_runner(task):
+        if task.task_id == "T1":
+            raise RuntimeError("Pricing source unavailable")
+        return execute_task(task)
+
+    app.dependency_overrides[require_workflow_executor] = lambda: None
+    app.dependency_overrides[get_workflow_plan_generator] = (
+        lambda: fake_planner
+    )
+    app.dependency_overrides[get_workflow_task_runner] = (
+        lambda: failing_runner
+    )
+
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/api/v1/workflows/",
+                json={"original_request": "Prepare a proposal"},
+            )
+            workflow_id = created.json()["id"]
+
+            response = client.post(
+                f"/api/v1/workflows/{workflow_id}/execute"
+            )
+
+            assert response.status_code == 200
+            assert response.json()["status"] == "PARTIAL_SUCCESS"
+
+            saved = client.get(
+                f"/api/v1/workflows/{workflow_id}"
+            )
+            assert saved.json()["status"] == "PARTIAL_SUCCESS"
+    finally:
+        app.dependency_overrides.pop(
+            require_workflow_executor,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_plan_generator,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_task_runner,
+            None,
+        )
+
+
+def test_execute_workflow_marks_failed_run(test_user_id):
+    def failing_planner(request: str) -> WorkflowPlan:
+        raise RuntimeError("Planner is temporarily unavailable")
+
+    app.dependency_overrides[require_workflow_executor] = lambda: None
+    app.dependency_overrides[get_workflow_plan_generator] = (
+        lambda: failing_planner
+    )
+
+    try:
+        with TestClient(
+            app,
+            raise_server_exceptions=False,
+        ) as client:
+            created = client.post(
+                "/api/v1/workflows/",
+                json={"original_request": "Prepare a proposal"},
+            )
+            workflow_id = created.json()["id"]
+
+            response = client.post(
+                f"/api/v1/workflows/{workflow_id}/execute"
+            )
+
+            assert response.status_code == 500
+            assert response.json()["error"] == "INTERNAL_SERVER_ERROR"
+
+            saved = client.get(
+                f"/api/v1/workflows/{workflow_id}"
+            )
+            assert saved.json()["status"] == "FAILED"
+    finally:
+        app.dependency_overrides.pop(
+            require_workflow_executor,
+            None,
+        )
+        app.dependency_overrides.pop(
+            get_workflow_plan_generator,
+            None,
+        )
+
+
+def test_execute_workflow_requires_executor(test_user_id):
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/workflows/",
+            json={"original_request": "Prepare a proposal"},
+        )
+        workflow_id = created.json()["id"]
+
+        response = client.post(
+            f"/api/v1/workflows/{workflow_id}/execute"
+        )
+
+    assert response.status_code == 403

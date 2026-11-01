@@ -5,6 +5,10 @@ from typing import Annotated, Literal
 from pydantic import StringConstraints
 from pydantic import BaseModel, ConfigDict
 
+from app.workflow_engine.schemas import (
+    PlannedTask,
+    TaskExecutionResult,
+)
 
 class WorkflowRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -37,6 +41,17 @@ WorkflowStatus = Literal[
     "FAILED",
     "CANCELLED"
 ]
+
+
+class WorkflowExecutionRead(BaseModel):
+    workflow_id: UUID
+    status: WorkflowStatus
+    planning_outcome: Literal["NEEDS_INPUT", "READY"]
+    summary: str
+    missing_information: list[str]
+    tasks: list[PlannedTask]
+    execution_order: list[str]
+    execution_results: list[TaskExecutionResult]
 
 class WorkFlowStatusUpdate(BaseModel):
     expected_status: WorkflowStatus
