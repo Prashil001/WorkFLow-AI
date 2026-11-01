@@ -1,14 +1,17 @@
 
 import pytest
 from uuid import uuid4
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 import app.models
 from app.api.dependencies import get_current_user_id
+import app.api.dependencies as api_dependencies
 from app.api.dependencies import (
     get_workflow_plan_generator,
     get_workflow_task_runner,
@@ -88,6 +91,32 @@ def test_create_workflow(test_user_id):
 
         assert list_response.status_code == 200
         assert len(list_response.json()) == 1
+
+
+def test_bearer_token_authenticates_configured_user(
+    test_user_id,
+    monkeypatch,
+):
+    settings = SimpleNamespace(
+        workflow_api_token=SecretStr("local-test-api-token"),
+        workflow_user_id=test_user_id,
+    )
+    monkeypatch.setattr(
+        api_dependencies,
+        "get_settings",
+        lambda: settings,
+    )
+
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/v1/workflows/",
+            headers={
+                "Authorization": "Bearer local-test-api-token",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_reject_empty_request(test_user_id):

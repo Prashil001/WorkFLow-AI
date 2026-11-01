@@ -1,0 +1,56 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      POSTGRES_USER: workflow_ai
+      POSTGRES_PASSWORD: workflow_ai_test_password
+      POSTGRES_DB: workflow_ai
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      LANGSMITH_TRACING: "false"
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: workflow_ai
+          POSTGRES_PASSWORD: workflow_ai_test_password
+          POSTGRES_DB: workflow_ai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U workflow_ai -d workflow_ai"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Apply database migrations
+        run: uv run alembic upgrade head
+
+      - name: Run backend test suite
+        run: uv run pytest -q
