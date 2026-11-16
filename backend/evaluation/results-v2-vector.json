@@ -24,12 +24,12 @@
     "corpus": "stack-docs",
     "candidate_chunks": 30
   },
-  "evaluated_at": "2026-11-16T09:13:20.076960+00:00",
+  "evaluated_at": "2026-11-16T09:17:41.600365+00:00",
   "environment": {
     "python": "3.12.10",
     "platform": "Windows-11-10.0.26200-SP0",
     "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
-    "git_commit": "d0427cf0a94291c131f74c536520e53109751295",
+    "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
     "git_dirty": false,
     "postgres": "17.12 (Debian 17.12-1.pgdg13+1)",
     "pgvector": "0.8.7"
@@ -74,10 +74,10 @@
     "latency": {
       "scope": "retriever.retrieve() wall time incl. query embedding; 3 warm-up queries excluded",
       "count": 80,
-      "p50_ms": 26.06,
-      "p95_ms": 32.16,
-      "mean_ms": 26.26,
-      "max_ms": 37.08
+      "p50_ms": 26.28,
+      "p95_ms": 46.0,
+      "mean_ms": 29.68,
+      "max_ms": 147.13
     },
     "top_chunk_score_mean": {
       "answerable": 0.82,

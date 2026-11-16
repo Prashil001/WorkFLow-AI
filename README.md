@@ -196,7 +196,7 @@ Questions were drafted with an LLM assistant from passages found by searching th
 
 Citation integrity is checked deterministically: cited IDs must be in the given context, answers must cite something, and the rate of citing a gold page is reported. Abstention is measured on both unanswerable and answerable queries.
 
-**Baseline results: dense vector retrieval (config A).** Source: [`backend/evaluation/results-v2-vector.json`](backend/evaluation/results-v2-vector.json), recorded at commit `d0427cf` with a clean tree, `BAAI/bge-small-en-v1.5@aa8f8b060edb`, PostgreSQL 17.12, and pgvector 0.8.7.
+**Baseline results: dense vector retrieval (config A).** Source: [`backend/evaluation/results-v2-vector.json`](backend/evaluation/results-v2-vector.json), recorded at commit `145620a` with `BAAI/bge-small-en-v1.5@aa8f8b060edb`, PostgreSQL 17.12, and pgvector 0.8.7. The metrics are identical to the first baseline run at `d0427cf`, since retrieval is deterministic.
 
 | Queries | recall@1 | recall@3 | recall@5 | MRR@10 | nDCG@5 |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -205,7 +205,7 @@ Citation integrity is checked deterministically: cited IDs must be in the given 
 | Paraphrased (25) | 0.480 | 0.633 | 0.700 | 0.655 | 0.621 |
 | Multi-hop (15) | 0.367 | 0.722 | 0.844 | 0.872 | 0.788 |
 
-Retrieval latency over 80 queries: p50 26.1 ms, p95 32.2 ms. An earlier uncommitted run of the same code on the same machine measured p50 35.6 ms and p95 67.0 ms, so treat these as single-machine figures that vary by tens of percent between runs.
+Retrieval latency over 80 queries: p50 26.3 ms, p95 46.0 ms. Three runs of the same code on the same machine measured p95 between 32 and 67 ms, so treat latencies as single-machine figures that vary by tens of percent between runs.
 
 What the baseline shows:
 
@@ -213,10 +213,53 @@ What the baseline shows:
 - **Multi-hop recall@1 is capped at 0.5** by definition, since one result can hold only one of two required pages. recall@5 (0.844) is the more useful number there.
 - **Unanswerable questions can't be filtered by a score threshold.** Their mean top chunk score (0.754) sits close to the answerable mean (0.820), so dense scores alone can't tell them apart; abstention has to come from the generator.
 
+**Hybrid retrieval and reranking (configs B and C).** Every config ran on the same dataset, corpus, chunks, and machine, back to back at commit `145620a`.
+
+- **B (hybrid)** fuses the dense top-50 chunks with the Postgres full-text top-50 chunks using Reciprocal Rank Fusion (k=60).
+- **C (hybrid + rerank)** rescores the top 20 fused chunks with a FastEmbed cross-encoder. It has two variants: C uses `BAAI/bge-reranker-base` (1.04 GB) and C-lite uses `Xenova/ms-marco-MiniLM-L-6-v2` (80 MB).
+
+Both reranker models and every setting were fixed before any config was measured; nothing was tuned on this dataset. The full-text side uses Postgres `ts_rank_cd` (term frequency and proximity, no IDF), so it is lexical retrieval but not BM25.
+
+| Config | recall@1 | recall@3 | recall@5 | MRR@10 | nDCG@5 | p50 latency | p95 latency |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| A: vector | 0.554 | 0.756 | 0.810 | 0.805 | 0.764 | 26 ms | 46 ms |
+| B: hybrid (RRF) | 0.469 | 0.803 | 0.877 | 0.752 | 0.763 | 53 ms | 75 ms |
+| C-lite: hybrid + MiniLM-L6 rerank | 0.559 | **0.856** | 0.874 | 0.834 | 0.808 | 1.56 s | 1.74 s |
+| C: hybrid + bge-reranker-base | **0.580** | 0.815 | **0.892** | **0.839** | **0.820** | 8.18 s | 9.92 s |
+
+Paraphrased-query recall@5 rose from 0.700 (A) to 0.740 (B), 0.800 (C-lite), and 0.813 (C).
+
+With 65 answerable queries, small differences can be noise. [`app/evaluation/compare.py`](backend/app/evaluation/compare.py) therefore computes paired bootstrap 95% confidence intervals of each config's difference from A (10,000 resamples, fixed seed) and writes them to [`backend/evaluation/comparison-v2.json`](backend/evaluation/comparison-v2.json):
+
+| Difference vs. A | Interval excludes 0 (resolved) | Interval includes 0 (not resolved) |
+| --- | --- | --- |
+| B: hybrid | recall@5 +0.067 [+0.008, +0.133]; recall@1 −0.085 [−0.169, −0.008] | recall@3, MRR@10, nDCG@5 |
+| C-lite | recall@3 +0.100 [+0.026, +0.182]; recall@5 +0.064 [+0.003, +0.133] | recall@1, MRR@10, nDCG@5 |
+| C | recall@5 +0.082 [+0.028, +0.146]; nDCG@5 +0.056 [+0.009, +0.108] | recall@1, recall@3, MRR@10 |
+
+What the comparison shows:
+
+- **Hybrid alone is a trade-off.** Full-text search adds relevant pages the dense retriever missed (recall@5 up), but RRF also promotes chunks that only share common terms, which significantly lowers recall@1. nDCG@5 does not change.
+- **Reranking turns the extra recall into better ranking.** C is the only config with a resolved nDCG@5 gain over A. Its recall@1 and MRR@10 gains are not resolved by this dataset.
+- **Reranking is expensive on CPU.** Each query cross-encodes 20 chunks of about 400 tokens. On this laptop CPU (no GPU), bge-reranker-base adds about 8 s per query and MiniLM-L6 about 1.5 s. MiniLM keeps most of the gain at about a fifth of the cost; for an interactive service, C-lite or a GPU-backed reranker is the practical choice.
+
+The B, C-lite, and C results files record `git_dirty: true`. The only uncommitted changes during those runs were the results files written by the runs before them; the code was `145620a`.
+
 **Generation results are not recorded yet.** The Groq free tier allows 200,000 tokens per model per day, and one full pass needs more than that for the judge alone. A first attempt hit the limit for both models after 34 answers and 18 judgments; that partial run was discarded rather than reported. The runner now uses low reasoning effort and `--resume`, which reuses finished cases (same dataset, models, prompts, and retrieved context), so a pass can span the daily limit:
 
 ```powershell
 uv run python -m app.evaluation.run_v2 --config vector --pace 1 --resume
+uv run python -m app.evaluation.run_v2 --config hybrid-rerank --pace 1 --resume
+```
+
+To reproduce the retrieval comparison:
+
+```powershell
+uv run python -m app.evaluation.run_v2 --config vector --skip-generation
+uv run python -m app.evaluation.run_v2 --config hybrid --skip-generation
+uv run python -m app.evaluation.run_v2 --config hybrid-rerank-minilm --skip-generation
+uv run python -m app.evaluation.run_v2 --config hybrid-rerank --skip-generation
+uv run python -m app.evaluation.compare vector hybrid hybrid-rerank-minilm hybrid-rerank
 ```
 
 CI runs locked dependency installation, database migrations, and the full backend test suite on pushes to `main` and pull requests. Tests use fake embedding and drafting components, so they do not need Groq or LangSmith credentials.

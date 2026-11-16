@@ -1,0 +1,284 @@
+{
+  "baseline": "vector",
+  "dataset_sha256": "61b0333e150850a382c9dffff5c9471f39cb73d711700378bc7a71e270dc3548",
+  "corpus_sha256": "dc8b7e57ea06aad2f658fed34adaef28b1b849cf419fc0a9bcfe475f05383c6b",
+  "answerable_query_count": 65,
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20261116,
+    "interval": "95% percentile"
+  },
+  "configs": {
+    "vector": {
+      "description": "dense cosine similarity over pgvector HNSW (m=16, ef_construction=64)",
+      "reranker_model": null,
+      "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
+      "evaluated_at": "2026-11-16T09:17:41.600365+00:00",
+      "metrics": {
+        "query_count": 65,
+        "recall@1": 0.5538,
+        "recall@3": 0.7564,
+        "recall@5": 0.8103,
+        "mrr@10": 0.8046,
+        "ndcg@5": 0.764
+      },
+      "metrics_by_category": {
+        "easy": {
+          "query_count": 25,
+          "recall@1": 0.74,
+          "recall@3": 0.9,
+          "recall@5": 0.9,
+          "mrr@10": 0.9133,
+          "ndcg@5": 0.8923
+        },
+        "multi_hop": {
+          "query_count": 15,
+          "recall@1": 0.3667,
+          "recall@3": 0.7222,
+          "recall@5": 0.8444,
+          "mrr@10": 0.8722,
+          "ndcg@5": 0.7877
+        },
+        "paraphrased": {
+          "query_count": 25,
+          "recall@1": 0.48,
+          "recall@3": 0.6333,
+          "recall@5": 0.7,
+          "mrr@10": 0.6554,
+          "ndcg@5": 0.6214
+        }
+      },
+      "latency": {
+        "count": 80,
+        "p50_ms": 26.28,
+        "p95_ms": 46.0,
+        "mean_ms": 29.68,
+        "max_ms": 147.13
+      }
+    },
+    "hybrid": {
+      "description": "Reciprocal Rank Fusion of dense pgvector and Postgres full-text (OR of query terms, ts_rank_cd, GIN index)",
+      "reranker_model": null,
+      "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
+      "evaluated_at": "2026-11-16T09:17:49.188377+00:00",
+      "metrics": {
+        "query_count": 65,
+        "recall@1": 0.4692,
+        "recall@3": 0.8026,
+        "recall@5": 0.8769,
+        "mrr@10": 0.7523,
+        "ndcg@5": 0.7626
+      },
+      "metrics_by_category": {
+        "easy": {
+          "query_count": 25,
+          "recall@1": 0.54,
+          "recall@3": 0.92,
+          "recall@5": 0.98,
+          "mrr@10": 0.8147,
+          "ndcg@5": 0.8458
+        },
+        "multi_hop": {
+          "query_count": 15,
+          "recall@1": 0.3667,
+          "recall@3": 0.8222,
+          "recall@5": 0.9333,
+          "mrr@10": 0.8689,
+          "ndcg@5": 0.8538
+        },
+        "paraphrased": {
+          "query_count": 25,
+          "recall@1": 0.46,
+          "recall@3": 0.6733,
+          "recall@5": 0.74,
+          "mrr@10": 0.62,
+          "ndcg@5": 0.6247
+        }
+      },
+      "latency": {
+        "count": 80,
+        "p50_ms": 53.35,
+        "p95_ms": 75.1,
+        "mean_ms": 56.33,
+        "max_ms": 110.89
+      }
+    },
+    "hybrid-rerank-minilm": {
+      "description": "Reciprocal Rank Fusion of dense pgvector and Postgres full-text (OR of query terms, ts_rank_cd, GIN index), then cross-encoder reranking of the top 20 chunks",
+      "reranker_model": "Xenova/ms-marco-MiniLM-L-6-v2",
+      "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
+      "evaluated_at": "2026-11-16T09:20:16.537518+00:00",
+      "metrics": {
+        "query_count": 65,
+        "recall@1": 0.559,
+        "recall@3": 0.8564,
+        "recall@5": 0.8744,
+        "mrr@10": 0.8338,
+        "ndcg@5": 0.8076
+      },
+      "metrics_by_category": {
+        "easy": {
+          "query_count": 25,
+          "recall@1": 0.72,
+          "recall@3": 0.96,
+          "recall@5": 0.96,
+          "mrr@10": 0.94,
+          "ndcg@5": 0.9183
+        },
+        "multi_hop": {
+          "query_count": 15,
+          "recall@1": 0.3667,
+          "recall@3": 0.8111,
+          "recall@5": 0.8556,
+          "mrr@10": 0.8778,
+          "ndcg@5": 0.8108
+        },
+        "paraphrased": {
+          "query_count": 25,
+          "recall@1": 0.5133,
+          "recall@3": 0.78,
+          "recall@5": 0.8,
+          "mrr@10": 0.7013,
+          "ndcg@5": 0.695
+        }
+      },
+      "latency": {
+        "count": 80,
+        "p50_ms": 1560.36,
+        "p95_ms": 1743.32,
+        "mean_ms": 1569.33,
+        "max_ms": 1847.81
+      }
+    },
+    "hybrid-rerank": {
+      "description": "Reciprocal Rank Fusion of dense pgvector and Postgres full-text (OR of query terms, ts_rank_cd, GIN index), then cross-encoder reranking of the top 20 chunks",
+      "reranker_model": "BAAI/bge-reranker-base",
+      "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
+      "evaluated_at": "2026-11-16T09:36:04.449655+00:00",
+      "metrics": {
+        "query_count": 65,
+        "recall@1": 0.5795,
+        "recall@3": 0.8154,
+        "recall@5": 0.8923,
+        "mrr@10": 0.839,
+        "ndcg@5": 0.8202
+      },
+      "metrics_by_category": {
+        "easy": {
+          "query_count": 25,
+          "recall@1": 0.76,
+          "recall@3": 0.92,
+          "recall@5": 0.98,
+          "mrr@10": 0.948,
+          "ndcg@5": 0.9371
+        },
+        "multi_hop": {
+          "query_count": 15,
+          "recall@1": 0.3778,
+          "recall@3": 0.7778,
+          "recall@5": 0.8778,
+          "mrr@10": 0.8778,
+          "ndcg@5": 0.8129
+        },
+        "paraphrased": {
+          "query_count": 25,
+          "recall@1": 0.52,
+          "recall@3": 0.7333,
+          "recall@5": 0.8133,
+          "mrr@10": 0.7067,
+          "ndcg@5": 0.7078
+        }
+      },
+      "latency": {
+        "count": 80,
+        "p50_ms": 8180.4,
+        "p95_ms": 9917.84,
+        "mean_ms": 8395.21,
+        "max_ms": 10794.99
+      }
+    }
+  },
+  "differences_vs_baseline": {
+    "hybrid": {
+      "recall@1": {
+        "mean_difference": -0.0846,
+        "ci95_low": -0.1692,
+        "ci95_high": -0.0077
+      },
+      "recall@3": {
+        "mean_difference": 0.0462,
+        "ci95_low": -0.0256,
+        "ci95_high": 0.1205
+      },
+      "recall@5": {
+        "mean_difference": 0.0667,
+        "ci95_low": 0.0077,
+        "ci95_high": 0.1333
+      },
+      "mrr@10": {
+        "mean_difference": -0.0523,
+        "ci95_low": -0.114,
+        "ci95_high": 0.0054
+      },
+      "ndcg@5": {
+        "mean_difference": -0.0013,
+        "ci95_low": -0.0591,
+        "ci95_high": 0.0568
+      }
+    },
+    "hybrid-rerank-minilm": {
+      "recall@1": {
+        "mean_difference": 0.0051,
+        "ci95_low": -0.0487,
+        "ci95_high": 0.059
+      },
+      "recall@3": {
+        "mean_difference": 0.1,
+        "ci95_low": 0.0256,
+        "ci95_high": 0.1821
+      },
+      "recall@5": {
+        "mean_difference": 0.0641,
+        "ci95_low": 0.0026,
+        "ci95_high": 0.1333
+      },
+      "mrr@10": {
+        "mean_difference": 0.0292,
+        "ci95_low": -0.0208,
+        "ci95_high": 0.0772
+      },
+      "ndcg@5": {
+        "mean_difference": 0.0436,
+        "ci95_low": -0.0034,
+        "ci95_high": 0.0939
+      }
+    },
+    "hybrid-rerank": {
+      "recall@1": {
+        "mean_difference": 0.0256,
+        "ci95_low": -0.0487,
+        "ci95_high": 0.1
+      },
+      "recall@3": {
+        "mean_difference": 0.059,
+        "ci95_low": -0.0026,
+        "ci95_high": 0.1282
+      },
+      "recall@5": {
+        "mean_difference": 0.0821,
+        "ci95_low": 0.0282,
+        "ci95_high": 0.1462
+      },
+      "mrr@10": {
+        "mean_difference": 0.0343,
+        "ci95_low": -0.0223,
+        "ci95_high": 0.0928
+      },
+      "ndcg@5": {
+        "mean_difference": 0.0563,
+        "ci95_low": 0.0095,
+        "ci95_high": 0.1084
+      }
+    }
+  }
+}

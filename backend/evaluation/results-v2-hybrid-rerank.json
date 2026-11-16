@@ -1,0 +1,1694 @@
+{
+  "dataset": {
+    "name": "workflow-ai-rag",
+    "version": 2,
+    "sha256": "61b0333e150850a382c9dffff5c9471f39cb73d711700378bc7a71e270dc3548",
+    "query_count": 80,
+    "category_counts": {
+      "easy": 25,
+      "paraphrased": 25,
+      "multi_hop": 15,
+      "unanswerable": 15
+    }
+  },
+  "corpus": {
+    "name": "stack-docs",
+    "version": 1,
+    "document_count": 227,
+    "sha256": "dc8b7e57ea06aad2f658fed34adaef28b1b849cf419fc0a9bcfe475f05383c6b"
+  },
+  "config": {
+    "name": "hybrid-rerank",
+    "method": "Reciprocal Rank Fusion of dense pgvector and Postgres full-text (OR of query terms, ts_rank_cd, GIN index), then cross-encoder reranking of the top 20 chunks",
+    "embedding_model": "BAAI/bge-small-en-v1.5@aa8f8b060edb",
+    "corpus": "stack-docs",
+    "rrf_k": 60,
+    "candidates_per_retriever": 50,
+    "reranker_model": "BAAI/bge-reranker-base",
+    "rerank_depth": 20,
+    "candidate_chunks": 30
+  },
+  "evaluated_at": "2026-11-16T09:36:04.449655+00:00",
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
+    "git_commit": "145620a558be3de1803c300c5f2955ba480de717",
+    "git_dirty": true,
+    "postgres": "17.12 (Debian 17.12-1.pgdg13+1)",
+    "pgvector": "0.8.7"
+  },
+  "retrieval": {
+    "query_count": 80,
+    "answerable_query_count": 65,
+    "metrics": {
+      "query_count": 65,
+      "recall@1": 0.5795,
+      "recall@3": 0.8154,
+      "recall@5": 0.8923,
+      "mrr@10": 0.839,
+      "ndcg@5": 0.8202
+    },
+    "metrics_by_category": {
+      "easy": {
+        "query_count": 25,
+        "recall@1": 0.76,
+        "recall@3": 0.92,
+        "recall@5": 0.98,
+        "mrr@10": 0.948,
+        "ndcg@5": 0.9371
+      },
+      "multi_hop": {
+        "query_count": 15,
+        "recall@1": 0.3778,
+        "recall@3": 0.7778,
+        "recall@5": 0.8778,
+        "mrr@10": 0.8778,
+        "ndcg@5": 0.8129
+      },
+      "paraphrased": {
+        "query_count": 25,
+        "recall@1": 0.52,
+        "recall@3": 0.7333,
+        "recall@5": 0.8133,
+        "mrr@10": 0.7067,
+        "ndcg@5": 0.7078
+      }
+    },
+    "latency": {
+      "scope": "retriever.retrieve() wall time incl. query embedding; 3 warm-up queries excluded",
+      "count": 80,
+      "p50_ms": 8180.4,
+      "p95_ms": 9917.84,
+      "mean_ms": 8395.21,
+      "max_ms": 10794.99
+    },
+    "top_chunk_score_mean": {
+      "answerable": 5.0296,
+      "unanswerable": 1.0255
+    },
+    "cases": [
+      {
+        "id": "easy-01",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__background-tasks"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__background-tasks",
+          "fastapi__tutorial__path-operation-configuration",
+          "fastapi__tutorial__dependencies__index",
+          "fastapi__async",
+          "fastapi__tutorial__bigger-applications"
+        ],
+        "top_chunk_score": 7.6047,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-02",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__cors",
+          "fastapi__advanced__middleware"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__cors",
+          "fastapi__advanced__middleware",
+          "fastapi__tutorial__middleware",
+          "fastapi__fastapi-cli",
+          "fastapi__deployment__manually"
+        ],
+        "top_chunk_score": 5.9217,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-03",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__static-files",
+          "fastapi__how-to__custom-docs-ui-assets"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__static-files",
+          "fastapi__tutorial__frontend",
+          "fastapi__how-to__custom-docs-ui-assets",
+          "fastapi__deployment__docker",
+          "fastapi__fastapi-cli"
+        ],
+        "top_chunk_score": 8.7791,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.9197,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-04",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__response-status-code"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__response-status-code",
+          "fastapi__advanced__response-change-status-code",
+          "fastapi__tutorial__path-operation-configuration",
+          "fastapi__advanced__custom-response",
+          "fastapi__advanced__additional-status-codes"
+        ],
+        "top_chunk_score": 6.8006,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-05",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__testing"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__testing",
+          "fastapi__advanced__async-tests",
+          "fastapi__index",
+          "sqlmodel__tutorial__fastapi__tests",
+          "fastapi__tutorial__index"
+        ],
+        "top_chunk_score": 6.7309,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-06",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__advanced__events"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__events",
+          "fastapi__fastapi-cli",
+          "fastapi__index",
+          "fastapi__tutorial__first-steps",
+          "fastapi__deployment__concepts"
+        ],
+        "top_chunk_score": 5.9518,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-07",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__advanced__websockets"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__websockets",
+          "fastapi__advanced__opentelemetry",
+          "fastapi__tutorial__handling-errors",
+          "fastapi__advanced__advanced-dependencies",
+          "fastapi__tutorial__dependencies__dependencies-with-yield"
+        ],
+        "top_chunk_score": 7.0402,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-08",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__handling-errors"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__handling-errors",
+          "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "fastapi__advanced__custom-response",
+          "fastapi__advanced__additional-status-codes",
+          "fastapi__advanced__response-cookies"
+        ],
+        "top_chunk_score": 6.3113,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-09",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__middleware"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__middleware",
+          "fastapi__tutorial__first-steps",
+          "fastapi__advanced__middleware",
+          "fastapi__index",
+          "fastapi__tutorial__testing"
+        ],
+        "top_chunk_score": 8.0952,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-10",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__request-files",
+          "fastapi__tutorial__request-forms-and-files"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__request-files",
+          "fastapi__tutorial__request-forms-and-files",
+          "fastapi__tutorial__bigger-applications",
+          "fastapi__advanced__json-base64-bytes",
+          "fastapi__advanced__stream-data"
+        ],
+        "top_chunk_score": 5.8267,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-11",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__metadata",
+          "fastapi__how-to__conditional-openapi"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__metadata",
+          "fastapi__how-to__custom-docs-ui-assets",
+          "fastapi__how-to__configure-swagger-ui",
+          "fastapi__how-to__conditional-openapi",
+          "fastapi__tutorial__first-steps"
+        ],
+        "top_chunk_score": 7.8304,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.8772,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-12",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__advanced__sub-applications"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__sub-applications",
+          "fastapi__deployment__concepts",
+          "fastapi__advanced__behind-a-proxy",
+          "fastapi__index",
+          "fastapi__how-to__custom-docs-ui-assets"
+        ],
+        "top_chunk_score": 7.5882,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-13",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__strict_mode"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__strict_mode",
+          "pydantic__why",
+          "pydantic__concepts__unions",
+          "pydantic__concepts__fields",
+          "pydantic__index"
+        ],
+        "top_chunk_score": 7.9715,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-14",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__alias",
+          "pydantic__concepts__fields"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__fields",
+          "pydantic__concepts__alias",
+          "pydantic__concepts__serialization",
+          "pydantic__concepts__models",
+          "pydantic__index"
+        ],
+        "top_chunk_score": 7.5469,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-15",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__validators"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__models",
+          "pydantic__concepts__alias",
+          "pydantic__internals__architecture",
+          "pydantic__index",
+          "pydantic__concepts__validators"
+        ],
+        "top_chunk_score": 5.5504,
+        "recall@1": 0.0,
+        "recall@3": 0.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.2,
+        "ndcg@5": 0.3869,
+        "first_relevant_rank": 5
+      },
+      {
+        "id": "easy-16",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__type_adapter"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__type_adapter",
+          "pydantic__concepts__validators",
+          "pydantic__concepts__models",
+          "pydantic__index",
+          "pydantic__examples__custom_validators"
+        ],
+        "top_chunk_score": 6.7613,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-17",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__performance"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__json",
+          "pydantic__concepts__performance",
+          "pydantic__concepts__models",
+          "pydantic__migration",
+          "pydantic__examples__files"
+        ],
+        "top_chunk_score": 6.2259,
+        "recall@1": 0.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.6309,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "easy-18",
+        "category": "easy",
+        "relevant_source_ids": [
+          "pydantic__concepts__validation_decorator"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__validation_decorator",
+          "pydantic__migration",
+          "pydantic__concepts__validators",
+          "pydantic__errors__usage_errors",
+          "pydantic__index"
+        ],
+        "top_chunk_score": 7.732,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-19",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__where",
+          "sqlmodel__tutorial__one"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__where",
+          "sqlmodel__tutorial__one",
+          "sqlmodel__tutorial__select",
+          "sqlmodel__tutorial__connect__read-connected-data",
+          "sqlmodel__tutorial__limit-and-offset"
+        ],
+        "top_chunk_score": 7.1323,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-20",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__limit-and-offset"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__limit-and-offset",
+          "sqlmodel__tutorial__where",
+          "sqlmodel__tutorial__select",
+          "sqlmodel__tutorial__one",
+          "sqlmodel__tutorial__delete"
+        ],
+        "top_chunk_score": 5.1013,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-21",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__create-db-and-table",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__create-db-and-table",
+          "sqlmodel__tutorial__code-structure",
+          "sqlmodel__tutorial__fastapi__tests",
+          "sqlmodel__tutorial__create-db-and-table-with-db-browser",
+          "sqlmodel__tutorial__connect__create-connected-tables"
+        ],
+        "top_chunk_score": 5.9973,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6131,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-22",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__indexes",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__indexes",
+          "sqlmodel__index",
+          "sqlmodel__tutorial__fastapi__multiple-models",
+          "sqlmodel__install"
+        ],
+        "top_chunk_score": 4.8442,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-23",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__one"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__one",
+          "sqlmodel__tutorial__limit-and-offset",
+          "sqlmodel__tutorial__select",
+          "sqlmodel__tutorial__fastapi__simple-hero-api",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "top_chunk_score": 6.1906,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-24",
+        "category": "easy",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__relationship-attributes__cascade-delete-relationships"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__relationship-attributes__cascade-delete-relationships",
+          "sqlmodel__tutorial__delete",
+          "sqlmodel__tutorial__select",
+          "sqlmodel__features",
+          "sqlmodel__tutorial__create-db-and-table"
+        ],
+        "top_chunk_score": 7.1294,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "easy-25",
+        "category": "easy",
+        "relevant_source_ids": [
+          "fastapi__tutorial__bigger-applications"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__bigger-applications",
+          "fastapi__tutorial__first-steps",
+          "sqlmodel__tutorial__fastapi__simple-hero-api",
+          "fastapi__tutorial__dependencies__global-dependencies",
+          "fastapi__advanced__sub-applications"
+        ],
+        "top_chunk_score": 6.5647,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-01",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__background-tasks"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "fastapi__tutorial__background-tasks",
+          "fastapi__tutorial__server-sent-events",
+          "fastapi__deployment__https",
+          "fastapi__tutorial__handling-errors"
+        ],
+        "top_chunk_score": -0.6331,
+        "recall@1": 0.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.6309,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "para-02",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__cors"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__cors",
+          "fastapi__tutorial__frontend",
+          "fastapi__advanced__websockets",
+          "fastapi__tutorial__handling-errors",
+          "fastapi__advanced__strict-content-type"
+        ],
+        "top_chunk_score": 2.88,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-03",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "sqlmodel__tutorial__fastapi__session-with-dependency",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__advanced-dependencies",
+          "sqlmodel__tutorial__insert",
+          "sqlmodel__tutorial__automatic-id-none-refresh",
+          "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "sqlmodel__tutorial__fastapi__session-with-dependency"
+        ],
+        "top_chunk_score": 2.2352,
+        "recall@1": 0.0,
+        "recall@3": 0.0,
+        "recall@5": 0.6666666666666666,
+        "reciprocal_rank": 0.25,
+        "ndcg@5": 0.3836,
+        "first_relevant_rank": 4
+      },
+      {
+        "id": "para-04",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__advanced__testing-dependencies",
+          "sqlmodel__tutorial__fastapi__tests"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__testing-dependencies",
+          "fastapi__tutorial__dependencies__sub-dependencies",
+          "fastapi__tutorial__dependencies__index",
+          "fastapi__tutorial__security__get-current-user",
+          "fastapi__tutorial__bigger-applications"
+        ],
+        "top_chunk_score": 3.7244,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6131,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-05",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__advanced__settings"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__settings",
+          "fastapi__how-to__conditional-openapi",
+          "fastapi__fastapi-cli",
+          "fastapi__tutorial__frontend",
+          "fastapi__advanced__using-request-directly"
+        ],
+        "top_chunk_score": 3.3562,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-06",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__advanced__behind-a-proxy"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__behind-a-proxy",
+          "fastapi__index",
+          "fastapi__fastapi-cli",
+          "fastapi__tutorial__frontend",
+          "fastapi__tutorial__bigger-applications"
+        ],
+        "top_chunk_score": 4.2582,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-07",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__server-sent-events"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__server-sent-events",
+          "fastapi__tutorial__stream-json-lines",
+          "fastapi__deployment__concepts",
+          "fastapi__deployment__https",
+          "fastapi__advanced__custom-response"
+        ],
+        "top_chunk_score": 3.1843,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-08",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__deployment__server-workers"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__deployment__concepts",
+          "fastapi__deployment__server-workers",
+          "fastapi__tutorial__index",
+          "fastapi__deployment__manually",
+          "fastapi__index"
+        ],
+        "top_chunk_score": 3.4576,
+        "recall@1": 0.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.6309,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "para-09",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__how-to__conditional-openapi"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__first-steps",
+          "fastapi__how-to__conditional-openapi",
+          "fastapi__index",
+          "sqlmodel__tutorial__fastapi__simple-hero-api",
+          "fastapi__environment-variables"
+        ],
+        "top_chunk_score": -1.1985,
+        "recall@1": 0.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.6309,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "para-10",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__advanced__strict-content-type"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__strict-content-type",
+          "fastapi__alternatives",
+          "fastapi__how-to__custom-request-and-route",
+          "fastapi__tutorial__body",
+          "fastapi__tutorial__schema-extra-example"
+        ],
+        "top_chunk_score": 4.562,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-11",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__body-updates",
+          "sqlmodel__tutorial__fastapi__update"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__request-form-models",
+          "fastapi__tutorial__body-updates",
+          "fastapi__tutorial__body-fields",
+          "fastapi__tutorial__stream-json-lines",
+          "pydantic__migration"
+        ],
+        "top_chunk_score": -2.282,
+        "recall@1": 0.0,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.3869,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "para-12",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__tutorial__response-model",
+          "fastapi__tutorial__extra-models"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__security__simple-oauth2",
+          "fastapi__tutorial__security__oauth2-jwt",
+          "fastapi__tutorial__response-model",
+          "fastapi__advanced__security__http-basic-auth",
+          "fastapi__advanced__custom-response"
+        ],
+        "top_chunk_score": 1.7952,
+        "recall@1": 0.0,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg@5": 0.3066,
+        "first_relevant_rank": 3
+      },
+      {
+        "id": "para-13",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__strict_mode"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__index",
+          "pydantic__concepts__experimental",
+          "pydantic__migration",
+          "pydantic__concepts__strict_mode",
+          "pydantic__errors__errors"
+        ],
+        "top_chunk_score": 0.2636,
+        "recall@1": 0.0,
+        "recall@3": 0.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.25,
+        "ndcg@5": 0.4307,
+        "first_relevant_rank": 4
+      },
+      {
+        "id": "para-14",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__alias"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__body-nested-models",
+          "pydantic__migration",
+          "pydantic__concepts__fields",
+          "pydantic__concepts__json_schema",
+          "pydantic__concepts__models"
+        ],
+        "top_chunk_score": 3.6351,
+        "recall@1": 0.0,
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg@5": 0.0,
+        "first_relevant_rank": null
+      },
+      {
+        "id": "para-15",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__unions"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__unions",
+          "pydantic__migration",
+          "pydantic__concepts__fields",
+          "pydantic__examples__dynamic_models",
+          "pydantic__concepts__models"
+        ],
+        "top_chunk_score": 4.7058,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-16",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__validators"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__validators",
+          "pydantic__examples__custom_validators",
+          "pydantic__migration",
+          "pydantic__concepts__unions",
+          "pydantic__concepts__alias"
+        ],
+        "top_chunk_score": 4.9219,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-17",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__models",
+          "pydantic__concepts__config"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__models",
+          "pydantic__internals__architecture",
+          "fastapi__tutorial__body-updates",
+          "pydantic__examples__dynamic_models",
+          "pydantic__errors__usage_errors"
+        ],
+        "top_chunk_score": -0.2512,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6131,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-18",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "pydantic__concepts__forward_annotations"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__models",
+          "fastapi__tutorial__response-model",
+          "pydantic__examples__cyclic_references",
+          "fastapi__tutorial__body-nested-models",
+          "fastapi__how-to__migrate-from-pydantic-v1-to-pydantic-v2"
+        ],
+        "top_chunk_score": -0.9429,
+        "recall@1": 0.0,
+        "recall@3": 0.0,
+        "recall@5": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg@5": 0.0,
+        "first_relevant_rank": null
+      },
+      {
+        "id": "para-19",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__advanced__decimal"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__advanced__decimal",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__create-db-and-table",
+          "sqlmodel__index",
+          "sqlmodel__features"
+        ],
+        "top_chunk_score": 3.7754,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-20",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__advanced__datetime"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__advanced__datetime",
+          "sqlmodel__index",
+          "sqlmodel__tutorial__select",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__install"
+        ],
+        "top_chunk_score": 2.7623,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-21",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__code-structure"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__code-structure",
+          "sqlmodel__index",
+          "sqlmodel__tutorial__connect__read-connected-data",
+          "sqlmodel__tutorial__many-to-many__create-models-with-link",
+          "sqlmodel__tutorial__create-db-and-table"
+        ],
+        "top_chunk_score": 5.2202,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-22",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__automatic-id-none-refresh"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__connect__create-connected-rows",
+          "sqlmodel__tutorial__automatic-id-none-refresh",
+          "sqlmodel__tutorial__insert",
+          "sqlmodel__tutorial__many-to-many__create-data",
+          "sqlmodel__tutorial__many-to-many__link-with-extra-fields"
+        ],
+        "top_chunk_score": 0.8873,
+        "recall@1": 0.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.6309,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "para-23",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__many-to-many__link-with-extra-fields"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__many-to-many__link-with-extra-fields",
+          "sqlmodel__tutorial__many-to-many__index",
+          "sqlmodel__tutorial__many-to-many__update-remove-relationships",
+          "sqlmodel__tutorial__many-to-many__create-data",
+          "sqlmodel__tutorial__relationship-attributes__back-populates"
+        ],
+        "top_chunk_score": 4.6645,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "para-24",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__fastapi__limit-and-offset",
+          "sqlmodel__tutorial__limit-and-offset",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__fastapi__read-one",
+          "sqlmodel__tutorial__fastapi__response-model",
+          "sqlmodel__tutorial__fastapi__limit-and-offset",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__relationship-attributes__read-relationships"
+        ],
+        "top_chunk_score": 4.2674,
+        "recall@1": 0.0,
+        "recall@3": 0.3333333333333333,
+        "recall@5": 0.6666666666666666,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg@5": 0.4367,
+        "first_relevant_rank": 3
+      },
+      {
+        "id": "para-25",
+        "category": "paraphrased",
+        "relevant_source_ids": [
+          "fastapi__advanced__security__http-basic-auth"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__security__http-basic-auth",
+          "fastapi__deployment__https",
+          "fastapi__index",
+          "fastapi__tutorial__handling-errors",
+          "fastapi__tutorial__security__simple-oauth2"
+        ],
+        "top_chunk_score": 1.4837,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-01",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__tutorial__body",
+          "pydantic__concepts__validators"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__body",
+          "fastapi__tutorial__body-fields",
+          "fastapi__tutorial__body-multiple-params",
+          "fastapi__tutorial__request-form-models",
+          "fastapi__tutorial__header-param-models"
+        ],
+        "top_chunk_score": 7.04,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6131,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-02",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__how-to__migrate-from-pydantic-v1-to-pydantic-v2",
+          "pydantic__migration"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__how-to__migrate-from-pydantic-v1-to-pydantic-v2",
+          "fastapi__features",
+          "fastapi__tutorial__first-steps",
+          "fastapi__fastapi-cli",
+          "fastapi__tutorial__body"
+        ],
+        "top_chunk_score": 5.9668,
+        "recall@1": 0.5,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6131,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-03",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__fastapi__multiple-models",
+          "fastapi__tutorial__response-model",
+          "sqlmodel__tutorial__fastapi__response-model"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__fastapi__multiple-models",
+          "sqlmodel__tutorial__fastapi__response-model",
+          "sqlmodel__tutorial__fastapi__relationships",
+          "fastapi__tutorial__response-model"
+        ],
+        "top_chunk_score": 6.1439,
+        "recall@1": 0.0,
+        "recall@3": 0.6666666666666666,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg@5": 0.7123,
+        "first_relevant_rank": 2
+      },
+      {
+        "id": "multi-04",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__deployment__docker",
+          "fastapi__deployment__server-workers"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__deployment__docker",
+          "fastapi__deployment__concepts",
+          "fastapi__deployment__server-workers",
+          "fastapi__fastapi-cli",
+          "fastapi__deployment__fastapicloud"
+        ],
+        "top_chunk_score": 6.539,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.9197,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-05",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__tutorial__stream-json-lines",
+          "fastapi__tutorial__server-sent-events"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__server-sent-events",
+          "fastapi__tutorial__stream-json-lines",
+          "fastapi__advanced__strict-content-type",
+          "fastapi__advanced__stream-data",
+          "fastapi__advanced__custom-response"
+        ],
+        "top_chunk_score": 8.5516,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-06",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__tutorial__extra-models",
+          "pydantic__concepts__unions"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__response-model",
+          "fastapi__advanced__additional-responses",
+          "fastapi__tutorial__extra-models",
+          "fastapi__tutorial__request-form-models",
+          "fastapi__advanced__response-directly"
+        ],
+        "top_chunk_score": 4.416,
+        "recall@1": 0.0,
+        "recall@3": 0.5,
+        "recall@5": 0.5,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg@5": 0.3066,
+        "first_relevant_rank": 3
+      },
+      {
+        "id": "multi-07",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__advanced__response-cookies",
+          "fastapi__tutorial__cookie-params",
+          "fastapi__tutorial__cookie-param-models"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__response-cookies",
+          "fastapi__tutorial__cookie-param-models",
+          "fastapi__advanced__response-headers",
+          "fastapi__advanced__response-change-status-code",
+          "fastapi__tutorial__cookie-params"
+        ],
+        "top_chunk_score": 5.6055,
+        "recall@1": 0.3333333333333333,
+        "recall@3": 0.6666666666666666,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.9469,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-08",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__advanced__response-headers",
+          "fastapi__tutorial__header-params",
+          "fastapi__tutorial__header-param-models"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__response-headers",
+          "fastapi__tutorial__middleware",
+          "fastapi__advanced__custom-response",
+          "fastapi__tutorial__header-params",
+          "fastapi__advanced__additional-responses"
+        ],
+        "top_chunk_score": 7.3739,
+        "recall@1": 0.3333333333333333,
+        "recall@3": 0.3333333333333333,
+        "recall@5": 0.6666666666666666,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.6714,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-09",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "pydantic__concepts__strict_mode",
+          "fastapi__advanced__strict-content-type"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__strict-content-type",
+          "pydantic__concepts__strict_mode",
+          "pydantic__why",
+          "fastapi__index",
+          "fastapi__alternatives"
+        ],
+        "top_chunk_score": 6.9989,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-10",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__relationship-attributes__back-populates",
+          "sqlmodel__tutorial__fastapi__relationships"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__relationship-attributes__back-populates",
+          "sqlmodel__tutorial__fastapi__relationships",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__fastapi__response-model",
+          "sqlmodel__tutorial__fastapi__teams"
+        ],
+        "top_chunk_score": 5.9124,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-11",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "sqlmodel__tutorial__many-to-many__create-models-with-link",
+          "sqlmodel__tutorial__many-to-many__create-data"
+        ],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__relationship-attributes__create-and-update-relationships",
+          "sqlmodel__tutorial__many-to-many__index",
+          "sqlmodel__tutorial__many-to-many__create-data",
+          "sqlmodel__tutorial__many-to-many__create-models-with-link",
+          "sqlmodel__tutorial__connect__create-connected-tables"
+        ],
+        "top_chunk_score": 6.2244,
+        "recall@1": 0.0,
+        "recall@3": 0.5,
+        "recall@5": 1.0,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg@5": 0.5706,
+        "first_relevant_rank": 3
+      },
+      {
+        "id": "multi-12",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__advanced__generate-clients",
+          "fastapi__advanced__path-operation-advanced-configuration"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__generate-clients",
+          "fastapi__advanced__path-operation-advanced-configuration",
+          "fastapi__tutorial__bigger-applications",
+          "sqlmodel__tutorial__fastapi__read-one",
+          "fastapi__how-to__extending-openapi"
+        ],
+        "top_chunk_score": 6.3621,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-13",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "pydantic__concepts__json_schema",
+          "fastapi__how-to__separate-openapi-schemas"
+        ],
+        "retrieved_source_ids": [
+          "pydantic__concepts__json_schema",
+          "pydantic__internals__architecture",
+          "fastapi__how-to__separate-openapi-schemas",
+          "pydantic__migration",
+          "pydantic__integrations__datamodel_code_generator"
+        ],
+        "top_chunk_score": 5.1566,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.9197,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-14",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "pydantic__concepts__dataclasses",
+          "fastapi__advanced__dataclasses"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__advanced__dataclasses",
+          "sqlmodel__tutorial__fastapi__simple-hero-api",
+          "pydantic__concepts__dataclasses",
+          "pydantic__index",
+          "fastapi__features"
+        ],
+        "top_chunk_score": 8.481,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 0.9197,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "multi-15",
+        "category": "multi_hop",
+        "relevant_source_ids": [
+          "fastapi__environment-variables",
+          "fastapi__advanced__settings"
+        ],
+        "retrieved_source_ids": [
+          "fastapi__environment-variables",
+          "fastapi__advanced__settings",
+          "fastapi__fastapi-cli",
+          "fastapi__virtual-environments",
+          "fastapi__tutorial__frontend"
+        ],
+        "top_chunk_score": 6.1938,
+        "recall@1": 0.5,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg@5": 1.0,
+        "first_relevant_rank": 1
+      },
+      {
+        "id": "unans-01",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__fastapi__limit-and-offset",
+          "fastapi__advanced__middleware",
+          "fastapi__advanced__opentelemetry",
+          "fastapi__tutorial__cors",
+          "fastapi__advanced__advanced-dependencies"
+        ],
+        "top_chunk_score": 2.6481
+      },
+      {
+        "id": "unans-02",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "sqlmodel__index",
+          "sqlmodel__tutorial__many-to-many__create-data",
+          "sqlmodel__tutorial__create-db-and-table",
+          "sqlmodel__tutorial__many-to-many__link-with-extra-fields",
+          "fastapi__tutorial__sql-databases"
+        ],
+        "top_chunk_score": 0.5973
+      },
+      {
+        "id": "unans-03",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "pydantic__internals__architecture",
+          "pydantic__examples__requests",
+          "pydantic__concepts__models",
+          "pydantic__index",
+          "pydantic__integrations__datamodel_code_generator"
+        ],
+        "top_chunk_score": -1.9374
+      },
+      {
+        "id": "unans-04",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__deployment__https",
+          "fastapi__advanced__middleware",
+          "fastapi__tutorial__request-files",
+          "fastapi__advanced__using-request-directly",
+          "fastapi__advanced__strict-content-type"
+        ],
+        "top_chunk_score": -0.092
+      },
+      {
+        "id": "unans-05",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "sqlmodel__index",
+          "sqlmodel__install",
+          "sqlmodel__tutorial__select",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__features"
+        ],
+        "top_chunk_score": 0.2719
+      },
+      {
+        "id": "unans-06",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "pydantic__concepts__types",
+          "pydantic__integrations__datamodel_code_generator",
+          "pydantic__internals__architecture",
+          "pydantic__concepts__models",
+          "pydantic__concepts__json_schema"
+        ],
+        "top_chunk_score": 0.8341
+      },
+      {
+        "id": "unans-07",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__security__first-steps",
+          "fastapi__tutorial__security__simple-oauth2",
+          "fastapi__tutorial__security__oauth2-jwt",
+          "fastapi__advanced__security__oauth2-scopes",
+          "fastapi__tutorial__security__index"
+        ],
+        "top_chunk_score": 5.7916
+      },
+      {
+        "id": "unans-08",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__advanced__opentelemetry",
+          "fastapi__index",
+          "fastapi__fastapi-cli",
+          "fastapi__tutorial__first-steps",
+          "fastapi__deployment__manually"
+        ],
+        "top_chunk_score": -0.0018
+      },
+      {
+        "id": "unans-09",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__first-steps",
+          "fastapi__ai-development",
+          "fastapi__deployment__manually",
+          "fastapi__index",
+          "fastapi__alternatives"
+        ],
+        "top_chunk_score": -0.0573
+      },
+      {
+        "id": "unans-10",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__tutorial__first-steps",
+          "fastapi__fastapi-cli",
+          "fastapi__index",
+          "fastapi__advanced__opentelemetry",
+          "fastapi__deployment__manually"
+        ],
+        "top_chunk_score": 2.2418
+      },
+      {
+        "id": "unans-11",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "sqlmodel__tutorial__indexes",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__tutorial__select",
+          "sqlmodel__tutorial__one",
+          "sqlmodel__tutorial__where"
+        ],
+        "top_chunk_score": 1.1672
+      },
+      {
+        "id": "unans-12",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "sqlmodel__install",
+          "sqlmodel__tutorial__create-db-and-table",
+          "fastapi__tutorial__sql-databases",
+          "sqlmodel__databases",
+          "sqlmodel__index"
+        ],
+        "top_chunk_score": -0.8942
+      },
+      {
+        "id": "unans-13",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__deployment__manually",
+          "fastapi__advanced__behind-a-proxy",
+          "fastapi__index",
+          "fastapi__tutorial__cors",
+          "fastapi__tutorial__frontend"
+        ],
+        "top_chunk_score": -0.2973
+      },
+      {
+        "id": "unans-14",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "fastapi__advanced__opentelemetry",
+          "fastapi__advanced__advanced-dependencies",
+          "fastapi__tutorial__handling-errors",
+          "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "fastapi__fastapi-cli"
+        ],
+        "top_chunk_score": 4.9075
+      },
+      {
+        "id": "unans-15",
+        "category": "unanswerable",
+        "relevant_source_ids": [],
+        "retrieved_source_ids": [
+          "pydantic__examples__queues",
+          "pydantic__index",
+          "pydantic__concepts__models",
+          "pydantic__integrations__aws_lambda",
+          "pydantic__examples__files"
+        ],
+        "top_chunk_score": 0.2025
+      }
+    ]
+  },
+  "generation": null,
+  "limitations": [
+    "80 hand-verified queries over one 227-page corpus: differences of a few points between configs are within noise for a set this size.",
+    "Relevance labels are binary and document-level; they were audited against dense and full-text pools, so pages neither system retrieved may be unlabeled.",
+    "Generation scores come from an LLM judge, not human raters.",
+    "Latency was measured on one developer machine with a local PostgreSQL in Docker; it includes CPU query embedding."
+  ]
+}
