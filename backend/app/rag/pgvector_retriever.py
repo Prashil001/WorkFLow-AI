@@ -94,15 +94,19 @@ class PgVectorRetriever:
             limit=limit,
         )
 
-    @contextmanager
-    def _connection(self) -> Iterator[Connection]:
-        if isinstance(self._bind, Connection):
-            yield self._bind
-            return
+    def _connection(self):
+        return connect(self._bind)
 
-        bind = self._bind
-        if bind is None:
-            from app.db.database import engine as bind
 
-        with bind.connect() as connection:
-            yield connection
+@contextmanager
+def connect(bind: Engine | Connection | None) -> Iterator[Connection]:
+    """Use a caller-owned connection as-is, or open one from an engine."""
+    if isinstance(bind, Connection):
+        yield bind
+        return
+
+    if bind is None:
+        from app.db.database import engine as bind
+
+    with bind.connect() as connection:
+        yield connection

@@ -331,6 +331,34 @@ class WhitespaceCounter:
         return len(text.split())
 
 
+def test_full_text_retriever_ranks_matches_within_its_corpus(pg_connection):
+    from app.rag.corpus import PRICING_CORPUS
+    from app.rag.hybrid import HybridRetriever, PgFullTextRetriever
+
+    _ingest(pg_connection, _corpus(), corpus=PRICING_CORPUS)
+    lexical = PgFullTextRetriever(corpus=PRICING_CORPUS, bind=pg_connection)
+
+    matches = lexical.retrieve("Northstar Labs implementation packages", limit=5)
+
+    assert matches[0].source_id == "mock-pricing-001"
+    assert all(m.source_id.startswith("mock-pricing-") for m in matches)
+    assert [m.score for m in matches] == sorted((m.score for m in matches), reverse=True)
+    # Any term matching is enough (OR semantics).
+    assert lexical.retrieve("Cedar spaceship")[0].source_id == "mock-pricing-002"
+    # Stop words only, empty input, and tsquery syntax characters are safe.
+    assert lexical.retrieve("the and of") == []
+    assert lexical.retrieve("  ") == []
+    assert lexical.retrieve("Northstar & | ! :* ( ) '")[0].source_id == "mock-pricing-001"
+    assert PgFullTextRetriever(corpus="other", bind=pg_connection).retrieve("Northstar") == []
+
+    hybrid = HybridRetriever(
+        PgVectorRetriever(PaddedKeywordEmbedder(), corpus=PRICING_CORPUS,
+                          bind=pg_connection, minimum_score=0.0),
+        lexical,
+    )
+    assert hybrid.retrieve("Northstar Labs standard pricing")[0].source_id == "mock-pricing-001"
+
+
 def test_pgvector_retriever_plugs_into_pricing_search_tool(pg_connection):
     _ingest(pg_connection, _corpus())
     retriever = PgVectorRetriever(

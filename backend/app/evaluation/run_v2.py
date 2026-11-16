@@ -80,8 +80,53 @@ def build_vector_config() -> RetrieverConfig:
     )
 
 
+def build_hybrid_config() -> RetrieverConfig:
+    from app.rag.hybrid import RRF_K, HybridRetriever, PgFullTextRetriever
+    from app.workflow_engine.rag import MAX_RETRIEVAL_LIMIT
+
+    vector = build_vector_config()
+    return RetrieverConfig(
+        name="hybrid",
+        retriever=HybridRetriever(
+            vector.retriever,
+            PgFullTextRetriever(corpus=vector.description["corpus"]),
+        ),
+        description={
+            **vector.description,
+            "method": "Reciprocal Rank Fusion of dense pgvector and Postgres full-text "
+            "(OR of query terms, ts_rank_cd, GIN index)",
+            "rrf_k": RRF_K,
+            "candidates_per_retriever": MAX_RETRIEVAL_LIMIT,
+        },
+    )
+
+
+def _build_reranked_config(name: str, model_name: str) -> RetrieverConfig:
+    from app.rag.hybrid import RERANK_DEPTH, FastEmbedCrossEncoder, RerankingRetriever
+
+    hybrid = build_hybrid_config()
+    return RetrieverConfig(
+        name=name,
+        retriever=RerankingRetriever(hybrid.retriever, FastEmbedCrossEncoder(model_name)),
+        description={
+            **hybrid.description,
+            "method": f"{hybrid.description['method']}, then cross-encoder reranking "
+            f"of the top {RERANK_DEPTH} chunks",
+            "reranker_model": model_name,
+            "rerank_depth": RERANK_DEPTH,
+        },
+    )
+
+
 CONFIG_BUILDERS: dict[str, Callable[[], RetrieverConfig]] = {
     "vector": build_vector_config,
+    "hybrid": build_hybrid_config,
+    "hybrid-rerank": lambda: _build_reranked_config(
+        "hybrid-rerank", "BAAI/bge-reranker-base"
+    ),
+    "hybrid-rerank-minilm": lambda: _build_reranked_config(
+        "hybrid-rerank-minilm", "Xenova/ms-marco-MiniLM-L-6-v2"
+    ),
 }
 
 
