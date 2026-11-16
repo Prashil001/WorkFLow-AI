@@ -80,15 +80,15 @@ Then set `RAG_RETRIEVER=pgvector` in `backend/.env`; the workflow tools query th
 
 ### Retrieval corpus
 
-`stack-docs` is a realistic retrieval corpus of **228 documentation pages** (1.7 MB of cleaned text) from three MIT-licensed projects in this stack, each pinned to a commit:
+`stack-docs` is a realistic retrieval corpus of **227 documentation pages** (1.7 MB of cleaned text, 1,364 chunks at the default chunk size) from three MIT-licensed projects in this stack, each pinned to a commit:
 
 | Collection | Pages | Source | License |
 | --- | ---: | --- | --- |
-| FastAPI | 121 | [fastapi/fastapi](https://github.com/fastapi/fastapi) `docs/en/docs` | MIT |
+| FastAPI | 120 | [fastapi/fastapi](https://github.com/fastapi/fastapi) `docs/en/docs` | MIT |
 | Pydantic | 51 | [pydantic/pydantic](https://github.com/pydantic/pydantic) `docs` | MIT |
 | SQLModel | 56 | [fastapi/sqlmodel](https://github.com/fastapi/sqlmodel) `docs` | MIT |
 
-The corpus file is [`backend/app/rag/data/stack_docs_corpus.v1.json`](backend/app/rag/data/stack_docs_corpus.v1.json); commit SHAs, copyright lines, and full license texts are in [`THIRD_PARTY_NOTICES.md`](backend/app/rag/data/THIRD_PARTY_NOTICES.md). [`app/rag/build_corpus.py`](backend/app/rag/build_corpus.py) regenerates it from local checkouts. Cleaning removes build macros, code-include directives (so examples that live in separate source files are not in the corpus), heading anchors, HTML, API-reference stubs, changelogs, and pages under 80 words; inline fenced code is kept. The fictional pricing and calendar data stays as the source for the workflow tools.
+The corpus file is [`backend/app/rag/data/stack_docs_corpus.v1.json`](backend/app/rag/data/stack_docs_corpus.v1.json); commit SHAs, copyright lines, and full license texts are in [`THIRD_PARTY_NOTICES.md`](backend/app/rag/data/THIRD_PARTY_NOTICES.md). [`app/rag/build_corpus.py`](backend/app/rag/build_corpus.py) regenerates it from local checkouts. Cleaning removes build macros, code-include directives (so examples that live in separate source files are not in the corpus), heading anchors, HTML, API-reference stubs, changelogs, internal `_`-prefixed files, and pages under 80 words; inline fenced code is kept. The fictional pricing and calendar data stays as the source for the workflow tools.
 
 Documentation pages use token-aware, sentence-aware chunking: text is split into headings, sentences, and whole fenced code blocks, then packed up to `RAG_CHUNK_TOKENS` (default 400) counted with the embedding model's own WordPiece tokenizer, since bge-small-en-v1.5 truncates at 512 tokens. Each chunk starts with whole trailing sentences from the previous chunk, up to `RAG_CHUNK_OVERLAP_TOKENS` (default 60, i.e. 15%); a boundary after a sentence or code block longer than that budget gets no overlap rather than a mid-sentence cut. Each chunk is prefixed with `collection | page title > section`. The fictional pricing corpus keeps the original word chunker so the v1 evaluation stays comparable.
 
@@ -164,6 +164,60 @@ uv run python -m app.evaluation.run --output evaluation/results-v1.json
 Evaluation dataset: [`backend/app/evaluation/dataset.v1.json`](backend/app/evaluation/dataset.v1.json). Captured results: [`backend/evaluation/results-v1.json`](backend/evaluation/results-v1.json).
 
 The recorded run passed 11/11 checks: plan validation 3/3, dependency execution 2/2, citation integrity 2/2, and retrieval 4/4. On the three positive retrieval queries, Hit@1 and precision@3 were both 3/3; the unrelated query returned no matches. These are small synthetic regression checks, not broad benchmark scores. Planning cases validate known plan fixtures rather than live Groq output, and citation checks verify source IDs rather than the truth of every sentence.
+
+### RAG evaluation v2
+
+The v2 set measures retrieval and grounded answering on the `stack-docs` corpus. v1 is unchanged and still runs as above.
+
+```powershell
+uv run python -m app.rag.ingest --corpus stack-docs
+uv run python -m app.evaluation.run_v2 --config vector                    # retrieval + generation
+uv run python -m app.evaluation.run_v2 --config vector --skip-generation  # retrieval only, no Groq calls
+```
+
+Each run writes `backend/evaluation/results-v2-<config>.json` with the dataset and corpus SHA-256, embedding-model snapshot, git commit, PostgreSQL and pgvector versions, per-query results, and judge rationales.
+
+**Dataset** ([`dataset.v2.json`](backend/app/evaluation/dataset.v2.json)): 80 queries, each with a question, relevant source IDs, and a reference answer.
+
+| Category | Queries | What it tests |
+| --- | ---: | --- |
+| Easy | 25 | Wording close to the source page |
+| Paraphrased | 25 | The need described without the page's key terms |
+| Multi-hop | 15 | Facts from two pages, often across FastAPI, Pydantic, and SQLModel |
+| Unanswerable | 15 | Plausible for this stack but absent from the corpus |
+
+Questions were drafted with an LLM assistant from passages found by searching the corpus, then made checkable: every answerable item carries verbatim evidence quotes, and every unanswerable item carries an `absence_pattern`. A test fails if any quote is missing from its cited page or any absence pattern matches a corpus page. Relevance labels were audited against the pooled top-5 pages of dense and full-text retrieval before any metric was recorded; 11 labels were added where a pooled page explicitly stated a required fact (99 labels in total).
+
+**Metrics.** Retrieval is scored per page: chunk results are collapsed to their source page, and recall@1/3/5, MRR@10, and nDCG@5 (binary relevance) are averaged over the 65 answerable queries. Latency is the wall time of one `retrieve()` call, including CPU query embedding, after 3 warm-up queries. Generation uses the top 5 chunks as context for `openai/gpt-oss-20b` (the app's model), and `openai/gpt-oss-120b` judges each answer at temperature 0:
+
+- **Faithfulness:** share of the answer's atomic claims supported by the context.
+- **Answer relevance:** 1-5.
+- **Answer correctness:** 1-5 against the reference answer; an abstention on an answerable question scores 1.
+
+Citation integrity is checked deterministically: cited IDs must be in the given context, answers must cite something, and the rate of citing a gold page is reported. Abstention is measured on both unanswerable and answerable queries.
+
+**Baseline results: dense vector retrieval (config A).** Source: [`backend/evaluation/results-v2-vector.json`](backend/evaluation/results-v2-vector.json), recorded at commit `d0427cf` with a clean tree, `BAAI/bge-small-en-v1.5@aa8f8b060edb`, PostgreSQL 17.12, and pgvector 0.8.7.
+
+| Queries | recall@1 | recall@3 | recall@5 | MRR@10 | nDCG@5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| All answerable (65) | 0.554 | 0.756 | 0.810 | 0.805 | 0.764 |
+| Easy (25) | 0.740 | 0.900 | 0.900 | 0.913 | 0.892 |
+| Paraphrased (25) | 0.480 | 0.633 | 0.700 | 0.655 | 0.621 |
+| Multi-hop (15) | 0.367 | 0.722 | 0.844 | 0.872 | 0.788 |
+
+Retrieval latency over 80 queries: p50 26.1 ms, p95 32.2 ms. An earlier uncommitted run of the same code on the same machine measured p50 35.6 ms and p95 67.0 ms, so treat these as single-machine figures that vary by tens of percent between runs.
+
+What the baseline shows:
+
+- **Paraphrased queries are the weak spot.** recall@5 is 0.70, against 0.90 when the wording matches the page.
+- **Multi-hop recall@1 is capped at 0.5** by definition, since one result can hold only one of two required pages. recall@5 (0.844) is the more useful number there.
+- **Unanswerable questions can't be filtered by a score threshold.** Their mean top chunk score (0.754) sits close to the answerable mean (0.820), so dense scores alone can't tell them apart; abstention has to come from the generator.
+
+**Generation results are not recorded yet.** The Groq free tier allows 200,000 tokens per model per day, and one full pass needs more than that for the judge alone. A first attempt hit the limit for both models after 34 answers and 18 judgments; that partial run was discarded rather than reported. The runner now uses low reasoning effort and `--resume`, which reuses finished cases (same dataset, models, prompts, and retrieved context), so a pass can span the daily limit:
+
+```powershell
+uv run python -m app.evaluation.run_v2 --config vector --pace 1 --resume
+```
 
 CI runs locked dependency installation, database migrations, and the full backend test suite on pushes to `main` and pull requests. Tests use fake embedding and drafting components, so they do not need Groq or LangSmith credentials.
 
