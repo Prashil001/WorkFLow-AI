@@ -12,7 +12,10 @@ EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 DEFAULT_CHUNK_SIZE = 22
 DEFAULT_CHUNK_OVERLAP = 5
 DEFAULT_MINIMUM_SCORE = 0.70
-MAX_RETRIEVAL_LIMIT = 10
+# Retrievers may return up to 50 chunks (evaluation and reranking candidate
+# pools); the read-only tools exposed to workflows and MCP stay capped at 10.
+MAX_RETRIEVAL_LIMIT = 50
+TOOL_RESULT_LIMIT = 10
 # bge-small-en-v1.5 truncates at 512 tokens; 400 leaves room for the chunk
 # header and special tokens. 60 tokens is 15% overlap.
 DEFAULT_CHUNK_TOKENS = 400
@@ -437,7 +440,8 @@ def retrieve_pricing_documents(
     active_retriever = retriever or get_default_retriever()
     matches = []
     seen_source_ids = set()
-    for chunk in active_retriever.retrieve(query, limit=limit):
+    tool_limit = max(1, min(limit, TOOL_RESULT_LIMIT))
+    for chunk in active_retriever.retrieve(query, limit=tool_limit):
         if chunk.source_id in seen_source_ids:
             continue
         seen_source_ids.add(chunk.source_id)

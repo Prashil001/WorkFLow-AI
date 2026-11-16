@@ -1,0 +1,1334 @@
+{
+  "dataset_name": "workflow-ai-rag",
+  "version": 2,
+  "corpus": "stack-docs",
+  "corpus_version": 1,
+  "relevance": "Document-level binary relevance: relevant_source_ids lists every corpus page judged to answer the question.",
+  "construction": "Questions and reference answers were drafted with an LLM assistant from passages located by searching the corpus. Every answerable item carries verbatim evidence quotes that tests verify against the cited documents; every unanswerable item carries an absence_pattern that tests verify matches no corpus document. Relevance labels were then audited against the pooled top-5 documents of dense (pgvector) and Postgres full-text retrieval before any metrics were recorded.",
+  "categories": {
+    "easy": "Wording close to the source page.",
+    "paraphrased": "Describes the need without the page's key terms.",
+    "multi_hop": "Needs facts from two pages.",
+    "unanswerable": "Plausible for this stack but not covered by the corpus; the system should abstain."
+  },
+  "queries": [
+    {
+      "id": "easy-01",
+      "category": "easy",
+      "question": "In FastAPI, what do you import and declare in a path operation function to run background tasks, and how do you schedule a task?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__background-tasks"
+      ],
+      "reference_answer": "Import BackgroundTasks, declare a path operation parameter typed as BackgroundTasks, and pass the task function to it with .add_task().",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__background-tasks",
+          "quote": "First, import `BackgroundTasks` and define a parameter in your *path operation function* with a type declaration of `BackgroundTasks`"
+        },
+        {
+          "source_id": "fastapi__tutorial__background-tasks",
+          "quote": "pass your task function to the *background tasks* object with the method `.add_task()`"
+        }
+      ]
+    },
+    {
+      "id": "easy-02",
+      "category": "easy",
+      "question": "Which middleware configures CORS in FastAPI, and what does its allow_origins setting control?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__cors",
+        "fastapi__advanced__middleware"
+      ],
+      "reference_answer": "CORSMiddleware; allow_origins is the list of origins permitted to make cross-origin requests.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__cors",
+          "quote": "You can configure it in your **FastAPI** application using the `CORSMiddleware`."
+        },
+        {
+          "source_id": "fastapi__tutorial__cors",
+          "quote": "`allow_origins` - A list of origins that should be permitted to make cross-origin requests."
+        }
+      ]
+    },
+    {
+      "id": "easy-03",
+      "category": "easy",
+      "question": "How do you serve static files from a directory in a FastAPI app?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__static-files",
+        "fastapi__how-to__custom-docs-ui-assets"
+      ],
+      "reference_answer": "Use StaticFiles and mount a StaticFiles() instance at a specific path.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__static-files",
+          "quote": "You can serve static files automatically from a directory using `StaticFiles`."
+        },
+        {
+          "source_id": "fastapi__tutorial__static-files",
+          "quote": "\"Mount\" a `StaticFiles()` instance in a specific path."
+        }
+      ]
+    },
+    {
+      "id": "easy-04",
+      "category": "easy",
+      "question": "Where do you declare the HTTP status code of a FastAPI response?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__response-status-code"
+      ],
+      "reference_answer": "With the status_code parameter of the path operation decorator method (get, post, etc.), not of the function.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__response-status-code",
+          "quote": "Notice that `status_code` is a parameter of the \"decorator\" method (`get`, `post`, etc)."
+        }
+      ]
+    },
+    {
+      "id": "easy-05",
+      "category": "easy",
+      "question": "What must be installed to use FastAPI's TestClient, and how should test functions be named?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__testing"
+      ],
+      "reference_answer": "Install httpx; name test functions starting with test_, following the pytest convention.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__testing",
+          "quote": "To use `TestClient`, first install `httpx`."
+        },
+        {
+          "source_id": "fastapi__tutorial__testing",
+          "quote": "Create functions with a name that starts with `test_` (this is a standard `pytest` convention)."
+        }
+      ]
+    },
+    {
+      "id": "easy-06",
+      "category": "easy",
+      "question": "How do you define startup and shutdown logic for a FastAPI application?",
+      "relevant_source_ids": [
+        "fastapi__advanced__events"
+      ],
+      "reference_answer": "Pass a lifespan function to the FastAPI app's lifespan parameter; it is an async context manager decorated with @asynccontextmanager, with startup code before the yield and shutdown code after it.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__events",
+          "quote": "You can define this *startup* and *shutdown* logic using the `lifespan` parameter of the `FastAPI` app, and a \"context manager\""
+        },
+        {
+          "source_id": "fastapi__advanced__events",
+          "quote": "If you check, the function is decorated with an `@asynccontextmanager`."
+        }
+      ]
+    },
+    {
+      "id": "easy-07",
+      "category": "easy",
+      "question": "What exception does FastAPI raise from websocket.receive_text() when a WebSocket connection is closed?",
+      "relevant_source_ids": [
+        "fastapi__advanced__websockets"
+      ],
+      "reference_answer": "WebSocketDisconnect, which you can catch and handle.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__websockets",
+          "quote": "When a WebSocket connection is closed, the `await websocket.receive_text()` will raise a `WebSocketDisconnect` exception"
+        }
+      ]
+    },
+    {
+      "id": "easy-08",
+      "category": "easy",
+      "question": "How do you return an HTTP error response to the client in FastAPI, and what values can the detail parameter hold?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__handling-errors"
+      ],
+      "reference_answer": "Raise HTTPException; detail can be any value that can be converted to JSON, not only a string.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__handling-errors",
+          "quote": "To return HTTP responses with errors to the client you use `HTTPException`."
+        },
+        {
+          "source_id": "fastapi__tutorial__handling-errors",
+          "quote": "you can pass any value that can be converted to JSON as the parameter `detail`, not only `str`."
+        }
+      ]
+    },
+    {
+      "id": "easy-09",
+      "category": "easy",
+      "question": "How do you create an HTTP middleware function in FastAPI?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__middleware"
+      ],
+      "reference_answer": "Decorate a function with @app.middleware(\"http\"); it receives the request and a call_next function that passes the request on.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__middleware",
+          "quote": "To create a middleware you use the decorator `@app.middleware(\"http\")` on top of a function."
+        },
+        {
+          "source_id": "fastapi__tutorial__middleware",
+          "quote": "A function `call_next` that will receive the `request` as a parameter."
+        }
+      ]
+    },
+    {
+      "id": "easy-10",
+      "category": "easy",
+      "question": "What package is needed to receive uploaded files in FastAPI, and why might UploadFile be better than bytes?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__request-files",
+        "fastapi__tutorial__request-forms-and-files"
+      ],
+      "reference_answer": "Install python-multipart. With bytes the whole contents are stored in memory, while UploadFile uses a spooled file.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__request-files",
+          "quote": "To receive uploaded files, first install `python-multipart`."
+        },
+        {
+          "source_id": "fastapi__tutorial__request-files",
+          "quote": "Keep in mind that this means that the whole contents will be stored in memory."
+        },
+        {
+          "source_id": "fastapi__tutorial__request-files",
+          "quote": "It uses a \"spooled\" file:"
+        }
+      ]
+    },
+    {
+      "id": "easy-11",
+      "category": "easy",
+      "question": "How do you disable the Swagger UI docs, or the whole OpenAPI schema, in a FastAPI app?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__metadata",
+        "fastapi__how-to__conditional-openapi"
+      ],
+      "reference_answer": "Set docs_url=None to disable Swagger UI; set openapi_url=None to disable the OpenAPI schema, which also disables the docs UIs that use it.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__metadata",
+          "quote": "You can disable it by setting `docs_url=None`."
+        },
+        {
+          "source_id": "fastapi__tutorial__metadata",
+          "quote": "If you want to disable the OpenAPI schema completely you can set `openapi_url=None`, that will also disable the documentation user interfaces that use it."
+        }
+      ]
+    },
+    {
+      "id": "easy-12",
+      "category": "easy",
+      "question": "How can one FastAPI server host two independent FastAPI applications, each with its own docs?",
+      "relevant_source_ids": [
+        "fastapi__advanced__sub-applications"
+      ],
+      "reference_answer": "Create a main app and mount one or more sub-applications on it.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__sub-applications",
+          "quote": "you can have a main app and \"mount\" one (or more) sub-application(s)."
+        }
+      ]
+    },
+    {
+      "id": "easy-13",
+      "category": "easy",
+      "question": "In Pydantic's default mode, what happens when the string '123' is passed for an int field, and when would you use strict mode?",
+      "relevant_source_ids": [
+        "pydantic__concepts__strict_mode"
+      ],
+      "reference_answer": "In the default lax mode it is coerced to the integer 123; strict mode is for cases where you want Pydantic to raise an error instead of coercing data.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__strict_mode",
+          "quote": "you can pass the string `'123'` as the input for the `int` number type, and it will be converted to the value `123`."
+        },
+        {
+          "source_id": "pydantic__concepts__strict_mode",
+          "quote": "you want Pydantic to error instead of coercing data."
+        }
+      ]
+    },
+    {
+      "id": "easy-14",
+      "category": "easy",
+      "question": "Which Pydantic Field parameters set different aliases for validation and for serialization?",
+      "relevant_source_ids": [
+        "pydantic__concepts__alias",
+        "pydantic__concepts__fields"
+      ],
+      "reference_answer": "validation_alias and serialization_alias on Field (alias sets both).",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__alias",
+          "quote": "* `validation_alias` on the `Field`"
+        },
+        {
+          "source_id": "pydantic__concepts__alias",
+          "quote": "* `serialization_alias` on the `Field`"
+        }
+      ]
+    },
+    {
+      "id": "easy-15",
+      "category": "easy",
+      "question": "What does Pydantic provide for validating a model's data as a whole rather than one field at a time?",
+      "relevant_source_ids": [
+        "pydantic__concepts__validators"
+      ],
+      "reference_answer": "Model validators, using model_validator().",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__validators",
+          "quote": "Validation can also be performed on the entire model's data using the `model_validator()`"
+        }
+      ]
+    },
+    {
+      "id": "easy-16",
+      "category": "easy",
+      "question": "What Pydantic class lets you validate data against types that are not BaseModels, such as list[SomeModel]?",
+      "relevant_source_ids": [
+        "pydantic__concepts__type_adapter"
+      ],
+      "reference_answer": "TypeAdapter.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__type_adapter",
+          "quote": "You may have types that are not `BaseModel`s that you want to validate data against."
+        },
+        {
+          "source_id": "pydantic__concepts__type_adapter",
+          "quote": "For use cases like this, Pydantic provides `TypeAdapter`,"
+        }
+      ]
+    },
+    {
+      "id": "easy-17",
+      "category": "easy",
+      "question": "Why does Pydantic recommend model_validate_json() over model_validate(json.loads(...))?",
+      "relevant_source_ids": [
+        "pydantic__concepts__performance"
+      ],
+      "reference_answer": "With model_validate(json.loads(...)) the JSON is parsed in Python, converted to a dict, and then validated; model_validate_json() performs the validation internally, avoiding that extra work.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__performance",
+          "quote": "On `model_validate(json.loads(...))`, the JSON is parsed in Python, then converted to a dict, then it's validated internally."
+        },
+        {
+          "source_id": "pydantic__concepts__performance",
+          "quote": "On the other hand, `model_validate_json()` already performs the validation internally."
+        }
+      ]
+    },
+    {
+      "id": "easy-18",
+      "category": "easy",
+      "question": "What does Pydantic's validate_call decorator do?",
+      "relevant_source_ids": [
+        "pydantic__concepts__validation_decorator"
+      ],
+      "reference_answer": "It parses and validates the arguments passed to a function using the function's annotations before the function is called.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__validation_decorator",
+          "quote": "The `validate_call()` decorator allows the arguments passed to a function to be parsed"
+        },
+        {
+          "source_id": "pydantic__concepts__validation_decorator",
+          "quote": "and validated using the function's annotations before the function is called."
+        }
+      ]
+    },
+    {
+      "id": "easy-19",
+      "category": "easy",
+      "question": "How do you filter rows in a SQLModel select() statement?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__where",
+        "sqlmodel__tutorial__one"
+      ],
+      "reference_answer": "Add .where() with a condition to the select() statement, like WHERE in SQL.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__where",
+          "quote": "we can add a `.where()` to a **SQLModel** `select()` statement to filter rows"
+        }
+      ]
+    },
+    {
+      "id": "easy-20",
+      "category": "easy",
+      "question": "Which methods on a SQLModel select statement limit the number of results and skip rows?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__limit-and-offset"
+      ],
+      "reference_answer": ".limit() limits the number of results and .offset() skips rows.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__limit-and-offset",
+          "quote": "also has a method `.limit()` that we can use to limit the results to a certain number."
+        },
+        {
+          "source_id": "sqlmodel__tutorial__limit-and-offset",
+          "quote": "We can use `.offset()`:"
+        }
+      ]
+    },
+    {
+      "id": "easy-21",
+      "category": "easy",
+      "question": "What call creates the database file and tables for SQLModel table models?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__create-db-and-table",
+        "fastapi__tutorial__sql-databases"
+      ],
+      "reference_answer": "SQLModel.metadata.create_all(engine).",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__create-db-and-table",
+          "quote": "But once we run `SQLModel.metadata.create_all(engine)`, it creates the `database.db` file **and** creates the `hero` table in that database."
+        }
+      ]
+    },
+    {
+      "id": "easy-22",
+      "category": "easy",
+      "question": "How do you add a database index to a field in a SQLModel model?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__indexes",
+        "fastapi__tutorial__sql-databases"
+      ],
+      "reference_answer": "Declare the field with Field(index=True).",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__indexes",
+          "quote": "We use the same `Field()` again as we did before, and set `index=True`."
+        }
+      ]
+    },
+    {
+      "id": "easy-23",
+      "category": "easy",
+      "question": "In SQLModel, how do .first(), .one(), and session.get() differ when reading a single row?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__one"
+      ],
+      "reference_answer": ".first() returns the first row of the results; .one() expects exactly one row and errors if more than one is found; session.get(Hero, 1) is equivalent to a select filtered by id with .where() followed by .first().",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__one",
+          "quote": "We can call the `.first()` method on the `results` object to get the first row:"
+        },
+        {
+          "source_id": "sqlmodel__tutorial__one",
+          "quote": "we could get the same error if we send a query that finds more than one row and expect exactly one with `.one()`"
+        },
+        {
+          "source_id": "sqlmodel__tutorial__one",
+          "quote": "`session.get(Hero, 1)` is equivalent to creating a `select()`, then filtering by Id using `.where()`, and then getting the first item with `.first()`."
+        }
+      ]
+    },
+    {
+      "id": "easy-24",
+      "category": "easy",
+      "question": "Which options does SQLModel offer for cascade deletes, and since which SQLModel version are they available?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__relationship-attributes__cascade-delete-relationships"
+      ],
+      "reference_answer": "cascade_delete, ondelete, and passive_deletes, available since SQLModel 0.0.21.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__relationship-attributes__cascade-delete-relationships",
+          "quote": "This feature, including `cascade_delete`, `ondelete`, and `passive_deletes`, is available since SQLModel version `0.0.21`."
+        }
+      ]
+    },
+    {
+      "id": "easy-25",
+      "category": "easy",
+      "question": "What FastAPI class do you use to create path operations in separate modules of a bigger application?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__bigger-applications"
+      ],
+      "reference_answer": "APIRouter; routers are then included in the main app.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__bigger-applications",
+          "quote": "You can create the *path operations* for that module using `APIRouter`."
+        }
+      ]
+    },
+    {
+      "id": "para-01",
+      "category": "paraphrased",
+      "question": "How can my endpoint kick off some work that only happens once the client has already received its reply?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__background-tasks"
+      ],
+      "reference_answer": "Use FastAPI background tasks, which run after returning a response: declare a BackgroundTasks parameter and call .add_task().",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__background-tasks",
+          "quote": "You can define background tasks to be run *after* returning a response."
+        }
+      ]
+    },
+    {
+      "id": "para-02",
+      "category": "paraphrased",
+      "question": "My JavaScript frontend on localhost:8080 cannot call my API on another port because the browser blocks it. What do I configure on the backend?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__cors"
+      ],
+      "reference_answer": "Configure CORS with CORSMiddleware and list the frontend origin in allow_origins; the browser sends an OPTIONS preflight request that the backend must authorize.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__cors",
+          "quote": "You can configure it in your **FastAPI** application using the `CORSMiddleware`."
+        },
+        {
+          "source_id": "fastapi__tutorial__cors",
+          "quote": "Then, the browser will send an HTTP `OPTIONS` request"
+        }
+      ]
+    },
+    {
+      "id": "para-03",
+      "category": "paraphrased",
+      "question": "How can a request-scoped helper open a database session and guarantee it gets closed when the request is done?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__dependencies__dependencies-with-yield",
+        "sqlmodel__tutorial__fastapi__session-with-dependency",
+        "fastapi__tutorial__sql-databases"
+      ],
+      "reference_answer": "Use a dependency with yield: create the session, yield it, and close it in the code after the yield, which FastAPI runs after finishing the request.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__dependencies__dependencies-with-yield",
+          "quote": "For example, you could use this to create a database session and close it after finishing."
+        },
+        {
+          "source_id": "sqlmodel__tutorial__fastapi__session-with-dependency",
+          "quote": "It could use `yield` instead of `return`, and in that case **FastAPI** will make sure it executes all the code **after** the `yield`, once it is done with the request."
+        }
+      ]
+    },
+    {
+      "id": "para-04",
+      "category": "paraphrased",
+      "question": "In my test suite I want to swap a real external-service dependency for a fake one. How do I do that in FastAPI?",
+      "relevant_source_ids": [
+        "fastapi__advanced__testing-dependencies",
+        "sqlmodel__tutorial__fastapi__tests"
+      ],
+      "reference_answer": "Put the replacement in app.dependency_overrides, a dict mapping the original dependency to the override.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__testing-dependencies",
+          "quote": "your **FastAPI** application has an attribute `app.dependency_overrides`, it is a simple `dict`."
+        }
+      ]
+    },
+    {
+      "id": "para-05",
+      "category": "paraphrased",
+      "question": "How should a FastAPI app read typed configuration such as database URLs from the environment or a dotenv file, without rebuilding it on every request?",
+      "relevant_source_ids": [
+        "fastapi__advanced__settings"
+      ],
+      "reference_answer": "Use a Settings class from pydantic-settings (it can read a .env file) and create it only once by wrapping the getter in @lru_cache.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__settings",
+          "quote": "Add the `pydantic-settings` package to your project:"
+        },
+        {
+          "source_id": "fastapi__advanced__settings",
+          "quote": "Creating the `Settings` only once with `lru_cache`"
+        },
+        {
+          "source_id": "fastapi__advanced__settings",
+          "quote": "Reading a `.env` file"
+        }
+      ]
+    },
+    {
+      "id": "para-06",
+      "category": "paraphrased",
+      "question": "My app sits behind Nginx under the /api/v1 prefix and the generated docs point to the wrong URLs. Which mechanism tells FastAPI about that prefix?",
+      "relevant_source_ids": [
+        "fastapi__advanced__behind-a-proxy"
+      ],
+      "reference_answer": "The ASGI root_path, which FastAPI supports through Starlette for apps served behind a proxy with a path prefix.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__behind-a-proxy",
+          "quote": "The `root_path` is a mechanism provided by the ASGI specification (that FastAPI is built on, through Starlette)."
+        }
+      ]
+    },
+    {
+      "id": "para-07",
+      "category": "paraphrased",
+      "question": "How can the server keep pushing a stream of events to a browser that listens with the EventSource API?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__server-sent-events"
+      ],
+      "reference_answer": "Use Server-Sent Events: yield events from the path operation and set response_class=EventSourceResponse; it uses the text/event-stream format.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__server-sent-events",
+          "quote": "To stream SSE with FastAPI, use `yield` in your *path operation function* and set `response_class=EventSourceResponse`."
+        }
+      ]
+    },
+    {
+      "id": "para-08",
+      "category": "paraphrased",
+      "question": "How do I use all of a server's CPU cores by running several copies of my FastAPI process?",
+      "relevant_source_ids": [
+        "fastapi__deployment__server-workers"
+      ],
+      "reference_answer": "Start multiple workers with the --workers option, for example fastapi run --workers 4 main.py.",
+      "evidence": [
+        {
+          "source_id": "fastapi__deployment__server-workers",
+          "quote": "You can start multiple workers with the `--workers` command line option:"
+        }
+      ]
+    },
+    {
+      "id": "para-09",
+      "category": "paraphrased",
+      "question": "I want interactive API documentation locally but switched off in production through an environment variable. How?",
+      "relevant_source_ids": [
+        "fastapi__how-to__conditional-openapi"
+      ],
+      "reference_answer": "Make openapi_url a setting and set the OPENAPI_URL environment variable to an empty string in production, which disables OpenAPI and the docs UIs.",
+      "evidence": [
+        {
+          "source_id": "fastapi__how-to__conditional-openapi",
+          "quote": "Then you could disable OpenAPI (including the UI docs) by setting the environment variable `OPENAPI_URL` to the empty string"
+        }
+      ]
+    },
+    {
+      "id": "para-10",
+      "category": "paraphrased",
+      "question": "Why does FastAPI reject a JSON request body when the client leaves out the header saying it is JSON, and can that be turned off?",
+      "relevant_source_ids": [
+        "fastapi__advanced__strict-content-type"
+      ],
+      "reference_answer": "FastAPI checks the Content-Type header strictly for JSON bodies by default, which protects against a class of CSRF attacks; set strict_content_type=False to support clients that do not send it.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__strict-content-type",
+          "quote": "By default, **FastAPI** uses strict `Content-Type` header checking for JSON request bodies"
+        },
+        {
+          "source_id": "fastapi__advanced__strict-content-type",
+          "quote": "you can disable strict checking by setting `strict_content_type=False`"
+        }
+      ]
+    },
+    {
+      "id": "para-11",
+      "category": "paraphrased",
+      "question": "When a client sends only a few fields to modify a stored item, how do I apply just those fields and keep the rest?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__body-updates",
+        "sqlmodel__tutorial__fastapi__update"
+      ],
+      "reference_answer": "Use a PATCH partial update: dump the input with model_dump(exclude_unset=True) and apply it with stored_model.model_copy(update=update_data).",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__body-updates",
+          "quote": "it's very useful to use the parameter `exclude_unset` in Pydantic's model's `.model_dump()`."
+        },
+        {
+          "source_id": "fastapi__tutorial__body-updates",
+          "quote": "Like `stored_item_model.model_copy(update=update_data)`:"
+        }
+      ]
+    },
+    {
+      "id": "para-12",
+      "category": "paraphrased",
+      "question": "My sign-up endpoint receives a plaintext password. How do I make sure the password is never echoed back in the response?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__response-model",
+        "fastapi__tutorial__extra-models"
+      ],
+      "reference_answer": "Use separate input and output models: the input model has the password, the output model does not, and the response model filters the output data to the declared output type.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__extra-models",
+          "quote": "* The **output model** should not have a password."
+        },
+        {
+          "source_id": "fastapi__tutorial__response-model",
+          "quote": "It will **limit and filter** the output data to what is defined in the return type."
+        }
+      ]
+    },
+    {
+      "id": "para-13",
+      "category": "paraphrased",
+      "question": "How do I stop Pydantic from silently turning numeric strings into integers?",
+      "relevant_source_ids": [
+        "pydantic__concepts__strict_mode"
+      ],
+      "reference_answer": "Enable strict mode, in which Pydantic errors instead of coercing data like '123' to 123.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__strict_mode",
+          "quote": "you want Pydantic to error instead of coercing data."
+        }
+      ]
+    },
+    {
+      "id": "para-14",
+      "category": "paraphrased",
+      "question": "Incoming JSON uses camelCase keys but my Python attributes are snake_case. How can Pydantic map every field automatically?",
+      "relevant_source_ids": [
+        "pydantic__concepts__alias"
+      ],
+      "reference_answer": "Use an alias_generator in the model config to generate aliases (such as camelCase) for all fields.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__alias",
+          "quote": "You can use the `alias_generator` parameter of `Config` to specify"
+        }
+      ]
+    },
+    {
+      "id": "para-15",
+      "category": "paraphrased",
+      "question": "With a union of several models, how can Pydantic choose the right model from a type field instead of trying each one?",
+      "relevant_source_ids": [
+        "pydantic__concepts__unions"
+      ],
+      "reference_answer": "Use a discriminated union: a discriminator selects which union member to validate against, and Pydantic recommends discriminated unions in general.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__unions",
+          "quote": "Unions can be validated more efficiently using a discriminator, by specifically choosing which member of the union to validate against."
+        },
+        {
+          "source_id": "pydantic__concepts__unions",
+          "quote": "In general, we recommend using discriminated unions."
+        }
+      ]
+    },
+    {
+      "id": "para-16",
+      "category": "paraphrased",
+      "question": "How do I check that a password and a repeated password match after all fields are validated?",
+      "relevant_source_ids": [
+        "pydantic__concepts__validators"
+      ],
+      "reference_answer": "Write a model 'after' validator with model_validator that compares the two fields and raises ValueError('Passwords do not match').",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__validators",
+          "quote": "Validation can also be performed on the entire model's data using the `model_validator()`"
+        },
+        {
+          "source_id": "pydantic__concepts__validators",
+          "quote": "raise ValueError('Passwords do not match')"
+        }
+      ]
+    },
+    {
+      "id": "para-17",
+      "category": "paraphrased",
+      "question": "How can I make Pydantic model instances read-only once they are created?",
+      "relevant_source_ids": [
+        "pydantic__concepts__models",
+        "pydantic__concepts__config"
+      ],
+      "reference_answer": "Make the model frozen, for example model_config['frozen'] = True or class Model(BaseModel, frozen=True).",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__models",
+          "quote": "Models can be configured to be immutable via `model_config['frozen'] = True`."
+        },
+        {
+          "source_id": "pydantic__concepts__config",
+          "quote": "class Model(BaseModel, frozen=True):"
+        }
+      ]
+    },
+    {
+      "id": "para-18",
+      "category": "paraphrased",
+      "question": "Can a Pydantic model describe a tree where each node holds children of the same model type?",
+      "relevant_source_ids": [
+        "pydantic__concepts__forward_annotations"
+      ],
+      "reference_answer": "Yes, self-referencing (recursive) models are supported.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__forward_annotations",
+          "quote": "Models with self-referencing fields are also supported."
+        }
+      ]
+    },
+    {
+      "id": "para-19",
+      "category": "paraphrased",
+      "question": "How do I store money amounts in SQLModel without floating-point rounding problems, and control how many digits are allowed?",
+      "relevant_source_ids": [
+        "sqlmodel__advanced__decimal"
+      ],
+      "reference_answer": "Use a Decimal field with max_digits (total digits, integer plus decimal) and decimal_places; the integer digits allowed are max_digits minus decimal_places.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__advanced__decimal",
+          "quote": "So, the allowed number of integer digits is `max_digits` - `decimal_places` = 2."
+        }
+      ]
+    },
+    {
+      "id": "para-20",
+      "category": "paraphrased",
+      "question": "How should timestamps that carry time-zone information be handled in SQLModel?",
+      "relevant_source_ids": [
+        "sqlmodel__advanced__datetime"
+      ],
+      "reference_answer": "Use aware datetimes, which carry timezone information, for example datetime.now(UTC) for an aware datetime in UTC.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__advanced__datetime",
+          "quote": "* An **aware datetime** has timezone information."
+        },
+        {
+          "source_id": "sqlmodel__advanced__datetime",
+          "quote": "For example, `datetime.now(UTC)` creates an aware datetime in **UTC**."
+        }
+      ]
+    },
+    {
+      "id": "para-21",
+      "category": "paraphrased",
+      "question": "My Hero and Team SQLModel classes live in different files and import each other, which crashes at import time. How do I fix it?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__code-structure"
+      ],
+      "reference_answer": "It is a circular import; import the other class only while type checking, using typing.TYPE_CHECKING.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__code-structure",
+          "quote": "it would result in a **circular import**."
+        },
+        {
+          "source_id": "sqlmodel__tutorial__code-structure",
+          "quote": "To solve it, there's a special trick with a special variable `TYPE_CHECKING` in the `typing` module."
+        }
+      ]
+    },
+    {
+      "id": "para-22",
+      "category": "paraphrased",
+      "question": "After inserting a row, how do I explicitly load the id that the database generated onto my Python object?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__automatic-id-none-refresh"
+      ],
+      "reference_answer": "Call session.refresh(object) after committing (accessing an expired attribute also triggers a refresh).",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__automatic-id-none-refresh",
+          "quote": "You can do that too with `session.refresh(object)`:"
+        }
+      ]
+    },
+    {
+      "id": "para-23",
+      "category": "paraphrased",
+      "question": "In a many-to-many between heroes and teams, how do I record whether a hero is still in training for a particular team?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__many-to-many__link-with-extra-fields"
+      ],
+      "reference_answer": "Add an extra field such as is_training to the link (association) model.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__many-to-many__link-with-extra-fields",
+          "quote": "We will add a new field `is_training`."
+        }
+      ]
+    },
+    {
+      "id": "para-24",
+      "category": "paraphrased",
+      "question": "How do I return results page by page from a FastAPI endpoint that lists SQLModel heroes?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__fastapi__limit-and-offset",
+        "sqlmodel__tutorial__limit-and-offset",
+        "fastapi__tutorial__sql-databases"
+      ],
+      "reference_answer": "Accept offset and limit query parameters and apply .offset() and .limit() to the select statement.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__fastapi__limit-and-offset",
+          "quote": "Let's use the same **offset** and **limit** we learned about in the previous tutorial chapters for the API."
+        }
+      ]
+    },
+    {
+      "id": "para-25",
+      "category": "paraphrased",
+      "question": "How do I compare HTTP Basic credentials without leaking information through how long the comparison takes?",
+      "relevant_source_ids": [
+        "fastapi__advanced__security__http-basic-auth"
+      ],
+      "reference_answer": "Use secrets.compare_digest(), which protects against timing attacks.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__security__http-basic-auth",
+          "quote": "But by using the `secrets.compare_digest()` it will be secure against a type of attacks called \"timing attacks\"."
+        }
+      ]
+    },
+    {
+      "id": "multi-01",
+      "category": "multi_hop",
+      "question": "FastAPI request bodies are declared with Pydantic models. How do I declare such a body, and how can I attach a validator that runs before Pydantic's own validation for one field?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__body",
+        "pydantic__concepts__validators"
+      ],
+      "reference_answer": "Declare a Pydantic BaseModel and use it as the parameter type; then add a field 'before' validator to that model (for example with field_validator in before mode or BeforeValidator).",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__body",
+          "quote": "To declare a **request** body, you use Pydantic models with all their power and benefits."
+        },
+        {
+          "source_id": "pydantic__concepts__validators",
+          "quote": "* field *before* validators"
+        }
+      ]
+    },
+    {
+      "id": "multi-02",
+      "category": "multi_hop",
+      "question": "When moving a FastAPI app from Pydantic v1 to v2, what compatibility path does FastAPI offer, and what replaces the .dict() and parse_obj() methods?",
+      "relevant_source_ids": [
+        "fastapi__how-to__migrate-from-pydantic-v1-to-pydantic-v2",
+        "pydantic__migration"
+      ],
+      "reference_answer": "FastAPI 0.119.0 added partial support for Pydantic v1 models from inside Pydantic v2 via pydantic.v1 to ease migration; dict() becomes model_dump() and parse_obj() becomes model_validate().",
+      "evidence": [
+        {
+          "source_id": "fastapi__how-to__migrate-from-pydantic-v1-to-pydantic-v2",
+          "quote": "FastAPI version 0.119.0 introduced partial support for Pydantic v1 from inside of Pydantic v2 (as `pydantic.v1`), to facilitate the migration to v2."
+        },
+        {
+          "source_id": "pydantic__migration",
+          "quote": "| `dict()` | `model_dump()` |"
+        },
+        {
+          "source_id": "pydantic__migration",
+          "quote": "| `parse_obj()` | `model_validate()` |"
+        }
+      ]
+    },
+    {
+      "id": "multi-03",
+      "category": "multi_hop",
+      "question": "Using SQLModel with FastAPI, which models do I define so creation input excludes the id and responses never include secret_name, and what FastAPI feature enforces the response shape?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__fastapi__multiple-models",
+        "fastapi__tutorial__response-model",
+        "sqlmodel__tutorial__fastapi__response-model"
+      ],
+      "reference_answer": "Define HeroCreate (no id) for input and HeroPublic (with id, without secret_name) for output; FastAPI's response model limits and filters the output data to the declared type.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__fastapi__multiple-models",
+          "quote": "But we also want to have a `HeroCreate` for the data we want to receive when **creating** a new hero"
+        },
+        {
+          "source_id": "sqlmodel__tutorial__fastapi__multiple-models",
+          "quote": "And we want to have a `HeroPublic` with the `id` field"
+        },
+        {
+          "source_id": "fastapi__tutorial__response-model",
+          "quote": "It will **limit and filter** the output data to what is defined in the return type."
+        }
+      ]
+    },
+    {
+      "id": "multi-04",
+      "category": "multi_hop",
+      "question": "On a Kubernetes cluster, where should replication of a containerized FastAPI app be handled, and how would you otherwise start several worker processes on one machine?",
+      "relevant_source_ids": [
+        "fastapi__deployment__docker",
+        "fastapi__deployment__server-workers"
+      ],
+      "reference_answer": "On a cluster you handle replication at the cluster level, typically one process per container; on a single server you can start multiple workers with the --workers option.",
+      "evidence": [
+        {
+          "source_id": "fastapi__deployment__docker",
+          "quote": "then you will probably want to **handle replication** at the **cluster level**"
+        },
+        {
+          "source_id": "fastapi__deployment__server-workers",
+          "quote": "You can start multiple workers with the `--workers` command line option:"
+        }
+      ]
+    },
+    {
+      "id": "multi-05",
+      "category": "multi_hop",
+      "question": "What content types do FastAPI's JSON Lines streaming and Server-Sent Events use, and which of them do browsers support natively?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__stream-json-lines",
+        "fastapi__tutorial__server-sent-events"
+      ],
+      "reference_answer": "JSON Lines uses application/jsonl; SSE uses text/event-stream, which browsers support natively through the EventSource API.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__stream-json-lines",
+          "quote": "A response would have a content type of `application/jsonl` (instead of `application/json`)"
+        },
+        {
+          "source_id": "fastapi__tutorial__server-sent-events",
+          "quote": "uses the `text/event-stream` format, which is supported natively by browsers with the `EventSource` API."
+        }
+      ]
+    },
+    {
+      "id": "multi-06",
+      "category": "multi_hop",
+      "question": "How can a FastAPI endpoint declare a response that may be one of several models, and how can Pydantic validate such a union efficiently?",
+      "relevant_source_ids": [
+        "fastapi__tutorial__extra-models",
+        "pydantic__concepts__unions"
+      ],
+      "reference_answer": "Declare the response as a Union of the models (anyOf in OpenAPI); Pydantic validates unions more efficiently with a discriminator that selects which member to validate.",
+      "evidence": [
+        {
+          "source_id": "fastapi__tutorial__extra-models",
+          "quote": "You can declare a response to be the `Union` of two or more types, that means, that the response would be any of them."
+        },
+        {
+          "source_id": "pydantic__concepts__unions",
+          "quote": "Unions can be validated more efficiently using a discriminator, by specifically choosing which member of the union to validate against."
+        }
+      ]
+    },
+    {
+      "id": "multi-07",
+      "category": "multi_hop",
+      "question": "How do I set a cookie in a FastAPI response, and how do I read that cookie in a later request?",
+      "relevant_source_ids": [
+        "fastapi__advanced__response-cookies",
+        "fastapi__tutorial__cookie-params",
+        "fastapi__tutorial__cookie-param-models"
+      ],
+      "reference_answer": "Declare a Response parameter and set cookies on that temporary response object; read it later with a Cookie parameter, declared like Query and Path parameters.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__response-cookies",
+          "quote": "And then you can set cookies in that *temporary* response object."
+        },
+        {
+          "source_id": "fastapi__tutorial__cookie-params",
+          "quote": "You can define Cookie parameters the same way you define `Query` and `Path` parameters."
+        }
+      ]
+    },
+    {
+      "id": "multi-08",
+      "category": "multi_hop",
+      "question": "How do I add a custom header to a FastAPI response, and how does a header parameter named user_agent map to the incoming User-Agent header?",
+      "relevant_source_ids": [
+        "fastapi__advanced__response-headers",
+        "fastapi__tutorial__header-params",
+        "fastapi__tutorial__header-param-models"
+      ],
+      "reference_answer": "Declare a Response parameter and set headers on that temporary response; Header converts parameter names from underscores to hyphens, so user_agent reads User-Agent.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__response-headers",
+          "quote": "And then you can set headers in that *temporary* response object."
+        },
+        {
+          "source_id": "fastapi__tutorial__header-params",
+          "quote": "So, by default, `Header` will convert the parameter names characters from underscore (`_`) to hyphen (`-`) to extract and document the headers."
+        }
+      ]
+    },
+    {
+      "id": "multi-09",
+      "category": "multi_hop",
+      "question": "Pydantic has a strict mode and FastAPI has strict Content-Type checking. What does each one do?",
+      "relevant_source_ids": [
+        "pydantic__concepts__strict_mode",
+        "fastapi__advanced__strict-content-type"
+      ],
+      "reference_answer": "Pydantic strict mode errors instead of coercing input types (for example '123' to int); FastAPI's strict Content-Type checking requires JSON request bodies to carry a valid JSON Content-Type header.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__strict_mode",
+          "quote": "you want Pydantic to error instead of coercing data."
+        },
+        {
+          "source_id": "fastapi__advanced__strict-content-type",
+          "quote": "By default, **FastAPI** uses strict `Content-Type` header checking for JSON request bodies"
+        }
+      ]
+    },
+    {
+      "id": "multi-10",
+      "category": "multi_hop",
+      "question": "In SQLModel, what does back_populates refer to, and how do you return heroes with their team from FastAPI without the response recursing into infinite data?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__relationship-attributes__back-populates",
+        "sqlmodel__tutorial__fastapi__relationships"
+      ],
+      "reference_answer": "back_populates names the attribute in the other model that references the current model; for the API, define explicit public models such as HeroPublicWithTeam and TeamPublicWithHeroes instead of including everything.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__relationship-attributes__back-populates",
+          "quote": "The string in `back_populates` is the name of the attribute *in the other* model, that will reference *the current* model."
+        },
+        {
+          "source_id": "sqlmodel__tutorial__fastapi__relationships",
+          "quote": "Let's add the models `HeroPublicWithTeam` and `TeamPublicWithHeroes`."
+        }
+      ]
+    },
+    {
+      "id": "multi-11",
+      "category": "multi_hop",
+      "question": "How do I define a many-to-many relationship between heroes and teams in SQLModel, and then create heroes that belong to teams?",
+      "relevant_source_ids": [
+        "sqlmodel__tutorial__many-to-many__create-models-with-link",
+        "sqlmodel__tutorial__many-to-many__create-data"
+      ],
+      "reference_answer": "Create a link model (HeroTeamLink) and pass link_model=HeroTeamLink to the Relationship attributes; then create team and hero objects linked through those relationship attributes and commit them.",
+      "evidence": [
+        {
+          "source_id": "sqlmodel__tutorial__many-to-many__create-models-with-link",
+          "quote": "And here's the important part to allow the **many-to-many** relationship, we use **`link_model=HeroTeamLink`**."
+        },
+        {
+          "source_id": "sqlmodel__tutorial__many-to-many__create-data",
+          "quote": "we'll create a function `create_heroes()` and we'll create some teams and heroes in it:"
+        }
+      ]
+    },
+    {
+      "id": "multi-12",
+      "category": "multi_hop",
+      "question": "When generating a TypeScript SDK from a FastAPI app, how do I get cleaner generated method names, and how can I set the operation ID of a single path operation?",
+      "relevant_source_ids": [
+        "fastapi__advanced__generate-clients",
+        "fastapi__advanced__path-operation-advanced-configuration"
+      ],
+      "reference_answer": "Provide a custom generate unique ID function, since FastAPI's unique ID per path operation becomes the operation ID used by generators; for one path operation, pass operation_id.",
+      "evidence": [
+        {
+          "source_id": "fastapi__advanced__generate-clients",
+          "quote": "FastAPI uses a **unique ID** for each *path operation*, which is used for the **operation ID**"
+        },
+        {
+          "source_id": "fastapi__advanced__path-operation-advanced-configuration",
+          "quote": "You can set the OpenAPI `operationId` to be used in your *path operation* with the parameter `operation_id`."
+        }
+      ]
+    },
+    {
+      "id": "multi-13",
+      "category": "multi_hop",
+      "question": "Pydantic can generate JSON Schema in different modes. Which parameter selects the mode, and how can FastAPI's separate input and output schemas be turned off?",
+      "relevant_source_ids": [
+        "pydantic__concepts__json_schema",
+        "fastapi__how-to__separate-openapi-schemas"
+      ],
+      "reference_answer": "The mode parameter (validation or serialization), e.g. model_json_schema(mode='serialization'); disable FastAPI's separate schemas with separate_input_output_schemas=False.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__json_schema",
+          "quote": "Specify the mode of JSON schema generation via the `mode` parameter"
+        },
+        {
+          "source_id": "fastapi__how-to__separate-openapi-schemas",
+          "quote": "you can disable this feature in **FastAPI**, with the parameter `separate_input_output_schemas=False`."
+        }
+      ]
+    },
+    {
+      "id": "multi-14",
+      "category": "multi_hop",
+      "question": "What are Pydantic dataclasses, and can a FastAPI app use standard dataclasses for its models?",
+      "relevant_source_ids": [
+        "pydantic__concepts__dataclasses",
+        "fastapi__advanced__dataclasses"
+      ],
+      "reference_answer": "Pydantic dataclasses behave like stdlib dataclasses with added Pydantic validation; FastAPI also supports standard dataclasses, thanks to Pydantic's internal dataclass support.",
+      "evidence": [
+        {
+          "source_id": "pydantic__concepts__dataclasses",
+          "quote": "They provide a similar functionality to stdlib dataclasses with the addition of Pydantic validation."
+        },
+        {
+          "source_id": "fastapi__advanced__dataclasses",
+          "quote": "This is still supported thanks to **Pydantic**, as it has internal support for `dataclasses`."
+        }
+      ]
+    },
+    {
+      "id": "multi-15",
+      "category": "multi_hop",
+      "question": "What is an environment variable, and what package does FastAPI recommend for loading settings from them?",
+      "relevant_source_ids": [
+        "fastapi__environment-variables",
+        "fastapi__advanced__settings"
+      ],
+      "reference_answer": "A value that lives outside the Python code in the operating system and can be read by the application; FastAPI recommends pydantic-settings for settings classes.",
+      "evidence": [
+        {
+          "source_id": "fastapi__environment-variables",
+          "quote": "An **environment variable** (also known as an **env var**) is a value that lives outside of your Python code, in the operating system, and can be read by your application and other programs."
+        },
+        {
+          "source_id": "fastapi__advanced__settings",
+          "quote": "Add the `pydantic-settings` package to your project:"
+        }
+      ]
+    },
+    {
+      "id": "unans-01",
+      "category": "unanswerable",
+      "question": "What built-in rate limiting does FastAPI provide, and how do I set a limit of 100 requests per minute?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover rate limiting.",
+      "absence_pattern": "rate.?limit"
+    },
+    {
+      "id": "unans-02",
+      "category": "unanswerable",
+      "question": "What is the default connection pool_size of the engine created for SQLModel?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not state a connection pool size.",
+      "absence_pattern": "pool_size|pool size"
+    },
+    {
+      "id": "unans-03",
+      "category": "unanswerable",
+      "question": "How do I expose Pydantic models through an Apollo GraphQL Federation gateway?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover GraphQL federation.",
+      "absence_pattern": "federation"
+    },
+    {
+      "id": "unans-04",
+      "category": "unanswerable",
+      "question": "How do I serve partial content to video players with HTTP byte-range requests (Accept-Ranges) in FastAPI?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover byte-range requests.",
+      "absence_pattern": "byte.?range|Range header|Accept-Ranges"
+    },
+    {
+      "id": "unans-05",
+      "category": "unanswerable",
+      "question": "How do I run asynchronous queries in SQLModel using SQLAlchemy's AsyncSession?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover AsyncSession.",
+      "absence_pattern": "AsyncSession"
+    },
+    {
+      "id": "unans-06",
+      "category": "unanswerable",
+      "question": "How can I generate an Apache Avro schema from a Pydantic model?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover Avro schemas.",
+      "absence_pattern": "Avro"
+    },
+    {
+      "id": "unans-07",
+      "category": "unanswerable",
+      "question": "How do I add TOTP two-factor authentication to FastAPI's OAuth2 password flow?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover two-factor authentication.",
+      "absence_pattern": "TOTP|two-factor|2FA|multi-factor"
+    },
+    {
+      "id": "unans-08",
+      "category": "unanswerable",
+      "question": "How do I expose a FastAPI service over gRPC with protobuf service definitions?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover gRPC.",
+      "absence_pattern": "gRPC"
+    },
+    {
+      "id": "unans-09",
+      "category": "unanswerable",
+      "question": "Which Terraform module does the documentation recommend for deploying FastAPI on AWS?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not mention Terraform.",
+      "absence_pattern": "Terraform"
+    },
+    {
+      "id": "unans-10",
+      "category": "unanswerable",
+      "question": "How do I build a SOAP web service endpoint with WSDL in FastAPI?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover SOAP.",
+      "absence_pattern": "\\bSOAP\\b|WSDL"
+    },
+    {
+      "id": "unans-11",
+      "category": "unanswerable",
+      "question": "How do I index SQLModel rows into Elasticsearch for full-text search?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover Elasticsearch.",
+      "absence_pattern": "Elasticsearch"
+    },
+    {
+      "id": "unans-12",
+      "category": "unanswerable",
+      "question": "How do I shard SQLModel tables across several PostgreSQL servers?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover sharding.",
+      "absence_pattern": "shard"
+    },
+    {
+      "id": "unans-13",
+      "category": "unanswerable",
+      "question": "How do I enable HTTP/3 over QUIC when serving FastAPI?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover HTTP/3 or QUIC.",
+      "absence_pattern": "HTTP/3|\\bQUIC\\b"
+    },
+    {
+      "id": "unans-14",
+      "category": "unanswerable",
+      "question": "How do I report unhandled FastAPI exceptions to Sentry?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover Sentry.",
+      "absence_pattern": "Sentry"
+    },
+    {
+      "id": "unans-15",
+      "category": "unanswerable",
+      "question": "How do I consume Kafka topics and validate each message with Pydantic?",
+      "relevant_source_ids": [],
+      "reference_answer": "The documentation does not cover Kafka.",
+      "absence_pattern": "Kafka"
+    }
+  ],
+  "label_audit": "Pooled the top-5 documents per answerable query from dense pgvector retrieval and Postgres full-text retrieval (OR of query lexemes, ts_rank_cd) and reviewed every unlabeled pooled document. A document was added as relevant only if it explicitly states a fact the reference answer requires; 11 labels were added this way."
+}

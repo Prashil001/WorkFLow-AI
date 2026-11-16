@@ -70,6 +70,12 @@ class PgVectorRetriever:
             connection.execute(text(
                 "SELECT set_config('hnsw.iterative_scan', 'strict_order', true)"
             ))
+            # ef_search bounds the HNSW candidate list; keep it above the
+            # requested depth (pgvector's default is 40).
+            connection.execute(
+                text("SELECT set_config('hnsw.ef_search', :ef, true)"),
+                {"ef": str(max(40, 2 * clamp_retrieval_limit(limit)))},
+            )
             rows = connection.execute(statement).all()
 
         return rank_retrieved_chunks(

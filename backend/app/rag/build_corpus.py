@@ -196,6 +196,10 @@ def build_source_documents(
     skipped = []
     for path in sorted(docs_root.rglob("*.md")):
         relative_path = path.relative_to(docs_root).as_posix()
+        if path.name.startswith("_"):
+            # e.g. FastAPI's _llm-test.md translation fixture, not documentation.
+            skipped.append(f"{relative_path} (internal file)")
+            continue
         if relative_path.startswith(source.excluded_prefixes):
             skipped.append(f"{relative_path} (excluded section)")
             continue
