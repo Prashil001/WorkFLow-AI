@@ -262,6 +262,75 @@ def test_pgvector_retriever_matches_in_memory_retriever(pg_connection):
     assert pg_retriever.retrieve("   ") == []
 
 
+def _docs_subset(count=40):
+    from app.rag.corpus import load_docs_documents
+
+    return load_docs_documents()[:count]
+
+
+def test_corpora_are_isolated_for_sync_and_retrieval(pg_connection):
+    from app.rag.corpus import DOCS_CORPUS, PRICING_CORPUS
+
+    pricing = _ingest(pg_connection, _corpus(), corpus=PRICING_CORPUS)
+    docs = _ingest(
+        pg_connection,
+        _docs_subset(),
+        corpus=DOCS_CORPUS,
+        chunk_unit="tokens",
+        chunk_size=120,
+        overlap=18,
+        token_counter=WhitespaceCounter(),
+    )
+    # Re-syncing docs with fewer documents must not touch pricing rows.
+    resync = _ingest(
+        pg_connection,
+        _docs_subset(10),
+        corpus=DOCS_CORPUS,
+        chunk_unit="tokens",
+        chunk_size=120,
+        overlap=18,
+        token_counter=WhitespaceCounter(),
+    )
+
+    counts = dict(pg_connection.execute(
+        select(DocumentChunkRecord.corpus, func.count()).group_by(DocumentChunkRecord.corpus)
+    ).all())
+    assert counts[PRICING_CORPUS] == pricing.chunk_count
+    assert counts[DOCS_CORPUS] == resync.chunk_count < docs.chunk_count
+    assert resync.deleted == docs.chunk_count - resync.chunk_count
+
+    urls = set(pg_connection.execute(
+        select(DocumentChunkRecord.source_url).where(DocumentChunkRecord.corpus == DOCS_CORPUS)
+    ).scalars())
+    assert all(url and url.startswith("https://") for url in urls)
+
+    # Pricing rows are a small minority; the iterative HNSW scan must still
+    # return them in order when filtering by corpus.
+    pricing_retriever = PgVectorRetriever(
+        PaddedKeywordEmbedder(),
+        corpus=PRICING_CORPUS,
+        bind=pg_connection,
+        minimum_score=0.2,
+    )
+    matches = pricing_retriever.retrieve("Northstar Labs standard pricing", limit=5)
+    assert matches and all(m.source_id.startswith("mock-pricing-") for m in matches)
+    assert matches[0].source_id == "mock-pricing-001"
+
+    docs_retriever = PgVectorRetriever(
+        PaddedKeywordEmbedder(),
+        corpus=DOCS_CORPUS,
+        bind=pg_connection,
+        minimum_score=0.0,
+    )
+    doc_ids = {doc["document_id"] for doc in _docs_subset(10)}
+    assert all(m.source_id in doc_ids for m in docs_retriever.retrieve("anything", limit=10))
+
+
+class WhitespaceCounter:
+    def count(self, text):
+        return len(text.split())
+
+
 def test_pgvector_retriever_plugs_into_pricing_search_tool(pg_connection):
     _ingest(pg_connection, _corpus())
     retriever = PgVectorRetriever(

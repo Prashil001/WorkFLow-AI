@@ -67,14 +67,30 @@ uv run python -m app.bootstrap_user
 uv run uvicorn app.main:app --reload
 ```
 
-The database image is `pgvector/pgvector:pg17-trixie` (PostgreSQL 17 with pgvector, on the same Debian release as the official `postgres:17` image so existing volumes keep matching collations). Retrieval runs in memory by default. To serve it from PostgreSQL instead, load the corpus into the `document_chunks` table (HNSW cosine index plus a generated `tsvector` with a GIN index) and switch the backend:
+The database image is `pgvector/pgvector:pg17-trixie` (PostgreSQL 17 with pgvector, on the same Debian release as the official `postgres:17` image so existing volumes keep matching collations). Retrieval runs in memory by default. To serve it from PostgreSQL instead, load a corpus into the `document_chunks` table (HNSW cosine index plus a generated `tsvector` with a GIN index) and switch the backend:
 
 ```powershell
-uv run python -m app.rag.ingest            # chunk, embed, and sync; safe to re-run
-uv run python -m app.rag.ingest --dry-run  # report inserts/updates/deletes only
+uv run python -m app.rag.ingest --corpus pricing-mock            # fictional data for workflow tools
+uv run python -m app.rag.ingest --corpus stack-docs              # documentation corpus
+uv run python -m app.rag.ingest --corpus stack-docs --chunk-size 300 --overlap 45
+uv run python -m app.rag.ingest --corpus stack-docs --dry-run    # report changes only
 ```
 
-Then set `RAG_RETRIEVER=pgvector` in `backend/.env`. Ingestion is idempotent: unchanged chunks are not re-embedded, changed chunks are updated in place, and chunks removed from the corpus are deleted, all in one transaction.
+Then set `RAG_RETRIEVER=pgvector` in `backend/.env`; the workflow tools query the `pricing-mock` corpus. Ingestion is idempotent and scoped to one corpus: unchanged chunks are not re-embedded, changed chunks are updated in place, and chunks removed from that corpus are deleted, all in one transaction. The stored embedding-model identity includes the downloaded FastEmbed snapshot revision (for example `BAAI/bge-small-en-v1.5@aa8f8b060edb`), because FastEmbed does not pin model revisions; if a cache refresh pulls a different snapshot, the next ingestion re-embeds instead of mixing vectors.
+
+### Retrieval corpus
+
+`stack-docs` is a realistic retrieval corpus of **228 documentation pages** (1.7 MB of cleaned text) from three MIT-licensed projects in this stack, each pinned to a commit:
+
+| Collection | Pages | Source | License |
+| --- | ---: | --- | --- |
+| FastAPI | 121 | [fastapi/fastapi](https://github.com/fastapi/fastapi) `docs/en/docs` | MIT |
+| Pydantic | 51 | [pydantic/pydantic](https://github.com/pydantic/pydantic) `docs` | MIT |
+| SQLModel | 56 | [fastapi/sqlmodel](https://github.com/fastapi/sqlmodel) `docs` | MIT |
+
+The corpus file is [`backend/app/rag/data/stack_docs_corpus.v1.json`](backend/app/rag/data/stack_docs_corpus.v1.json); commit SHAs, copyright lines, and full license texts are in [`THIRD_PARTY_NOTICES.md`](backend/app/rag/data/THIRD_PARTY_NOTICES.md). [`app/rag/build_corpus.py`](backend/app/rag/build_corpus.py) regenerates it from local checkouts. Cleaning removes build macros, code-include directives (so examples that live in separate source files are not in the corpus), heading anchors, HTML, API-reference stubs, changelogs, and pages under 80 words; inline fenced code is kept. The fictional pricing and calendar data stays as the source for the workflow tools.
+
+Documentation pages use token-aware, sentence-aware chunking: text is split into headings, sentences, and whole fenced code blocks, then packed up to `RAG_CHUNK_TOKENS` (default 400) counted with the embedding model's own WordPiece tokenizer, since bge-small-en-v1.5 truncates at 512 tokens. Each chunk starts with whole trailing sentences from the previous chunk, up to `RAG_CHUNK_OVERLAP_TOKENS` (default 60, i.e. 15%); a boundary after a sentence or code block longer than that budget gets no overlap rather than a mid-sentence cut. Each chunk is prefixed with `collection | page title > section`. The fictional pricing corpus keeps the original word chunker so the v1 evaluation stays comparable.
 
 The API documentation is at <http://127.0.0.1:8000/docs>; the health endpoint is <http://127.0.0.1:8000/health>.
 

@@ -31,9 +31,10 @@ class DocumentChunkRecord(RagBase):
 
     __table_args__ = (
         UniqueConstraint(
+            "corpus",
             "source_id",
             "chunk_index",
-            name="uq_document_chunks_source_chunk",
+            name="uq_document_chunks_corpus_source_chunk",
         ),
         Index(
             "ix_document_chunks_embedding_hnsw",
@@ -54,7 +55,10 @@ class DocumentChunkRecord(RagBase):
         Identity(always=True),
         primary_key=True,
     )
+    corpus: Mapped[str] = mapped_column(String(64), nullable=False)
     source_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Owning client for business data, or the documentation collection.
     client: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)

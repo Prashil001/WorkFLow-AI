@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
     llm_max_retries: int = Field(default=1, ge=0, le=2)
     rag_retriever: Literal["memory", "pgvector"] = "memory"
+    rag_chunk_tokens: int = Field(default=400, ge=16, le=480)
+    rag_chunk_overlap_tokens: int = Field(default=60, ge=0, le=240)
     langsmith_tracing: bool = False
     langsmith_api_key: SecretStr | None = None
     langsmith_project: str = "workflow-ai"

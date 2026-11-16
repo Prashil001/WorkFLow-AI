@@ -1,10 +1,11 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.engine import Connection, Engine
 
 from app.models.document_chunk import DocumentChunkRecord
+from app.rag.corpus import PRICING_CORPUS
 from app.workflow_engine.rag import (
     DEFAULT_MINIMUM_SCORE,
     RetrievedChunk,
@@ -15,17 +16,19 @@ from app.workflow_engine.rag import (
 
 
 class PgVectorRetriever:
-    """Cosine-similarity retrieval over document_chunks using the HNSW index."""
+    """Cosine-similarity retrieval over one corpus using the HNSW index."""
 
     def __init__(
         self,
         embedder: TextEmbedder,
         *,
+        corpus: str = PRICING_CORPUS,
         bind: Engine | Connection | None = None,
         minimum_score: float = DEFAULT_MINIMUM_SCORE,
     ) -> None:
         self._embedder = embedder
         self._bind = bind
+        self.corpus = corpus
         self.minimum_score = minimum_score
 
     def retrieve(
@@ -55,11 +58,18 @@ class PgVectorRetriever:
                 DocumentChunkRecord.text,
                 distance.label("distance"),
             )
+            .where(DocumentChunkRecord.corpus == self.corpus)
             .order_by(distance)
             .limit(clamp_retrieval_limit(limit))
         )
 
         with self._connection() as connection:
+            # With a corpus filter, a plain HNSW scan can return fewer rows
+            # than requested; iterative scans (pgvector >= 0.8) keep searching
+            # in exact distance order. Transaction-local setting.
+            connection.execute(text(
+                "SELECT set_config('hnsw.iterative_scan', 'strict_order', true)"
+            ))
             rows = connection.execute(statement).all()
 
         return rank_retrieved_chunks(

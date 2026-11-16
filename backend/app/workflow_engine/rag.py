@@ -1,3 +1,4 @@
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
@@ -12,6 +13,11 @@ DEFAULT_CHUNK_SIZE = 22
 DEFAULT_CHUNK_OVERLAP = 5
 DEFAULT_MINIMUM_SCORE = 0.70
 MAX_RETRIEVAL_LIMIT = 10
+# bge-small-en-v1.5 truncates at 512 tokens; 400 leaves room for the chunk
+# header and special tokens. 60 tokens is 15% overlap.
+DEFAULT_CHUNK_TOKENS = 400
+DEFAULT_CHUNK_OVERLAP_TOKENS = 60
+MIN_CHUNK_TOKENS = 16
 
 
 class TextEmbedder(Protocol):
@@ -74,6 +80,193 @@ def chunk_documents(
     return chunks
 
 
+class TokenCounter(Protocol):
+    def count(self, text: str) -> int: ...
+
+
+@dataclass(frozen=True)
+class _TextUnit:
+    text: str
+    tokens: int
+    starts_block: bool
+    heading: str | None
+
+
+_HEADING_LINE = re.compile(r"^#{1,6}\s+(.*\S)\s*$")
+_FENCE_LINE = re.compile(r"^\s*(```|~~~)")
+# Split after sentence punctuation when the next sentence looks like a start.
+_SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9`\"'(\[*])")
+
+
+def chunk_documents_by_tokens(
+    documents: list[dict[str, str]],
+    token_counter: TokenCounter,
+    *,
+    chunk_tokens: int = DEFAULT_CHUNK_TOKENS,
+    overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
+) -> list[DocumentChunk]:
+    """Sentence-aware chunking with a token budget and sentence-level overlap.
+
+    Headings, prose sentences, and fenced code blocks are packed in order
+    until the next unit would exceed ``chunk_tokens``. The next chunk starts
+    with the trailing whole units of the previous one that fit within
+    ``overlap_tokens``. Units larger than the budget are split by line, then
+    by word. Each chunk is prefixed with "collection | title > section".
+    """
+    if chunk_tokens < MIN_CHUNK_TOKENS:
+        raise ValueError(f"Chunk size must be at least {MIN_CHUNK_TOKENS} tokens")
+    if overlap_tokens < 0 or overlap_tokens >= chunk_tokens:
+        raise ValueError("Overlap must be non-negative and smaller than the chunk size")
+
+    chunks: list[DocumentChunk] = []
+    for document in documents:
+        units = _document_units(document["content"], token_counter, chunk_tokens)
+        for chunk_index, packed in enumerate(
+            _pack_units(units, chunk_tokens, overlap_tokens)
+        ):
+            chunks.append(DocumentChunk(
+                source_id=document["document_id"],
+                client=document["client"],
+                title=document["title"],
+                chunk_index=chunk_index,
+                text=_render_chunk(document, packed),
+            ))
+    return chunks
+
+
+def _document_units(
+    content: str,
+    token_counter: TokenCounter,
+    chunk_tokens: int,
+) -> list[_TextUnit]:
+    units: list[_TextUnit] = []
+    heading: str | None = None
+
+    def add(text: str, starts_block: bool) -> None:
+        text = text.strip()
+        if not text:
+            return
+        tokens = token_counter.count(text)
+        if tokens <= chunk_tokens:
+            units.append(_TextUnit(text, tokens, starts_block, heading))
+            return
+        for index, piece in enumerate(
+            _split_oversized(text, token_counter, chunk_tokens)
+        ):
+            units.append(_TextUnit(
+                piece,
+                token_counter.count(piece),
+                starts_block and index == 0,
+                heading,
+            ))
+
+    paragraph: list[str] = []
+    code: list[str] | None = None
+
+    def flush_paragraph() -> None:
+        if not paragraph:
+            return
+        sentences = _SENTENCE_BOUNDARY.split(" ".join(paragraph))
+        for index, sentence in enumerate(sentences):
+            add(sentence, index == 0)
+        paragraph.clear()
+
+    for line in content.splitlines():
+        if code is not None:
+            code.append(line)
+            if _FENCE_LINE.match(line):
+                add("\n".join(code), True)
+                code = None
+            continue
+        if _FENCE_LINE.match(line):
+            flush_paragraph()
+            code = [line]
+            continue
+        heading_match = _HEADING_LINE.match(line)
+        if heading_match:
+            flush_paragraph()
+            heading = heading_match.group(1).strip()
+            add(heading, True)
+            continue
+        if not line.strip():
+            flush_paragraph()
+            continue
+        paragraph.append(line.strip())
+
+    flush_paragraph()
+    if code is not None:
+        add("\n".join(code), True)
+    return units
+
+
+def _split_oversized(
+    text: str,
+    token_counter: TokenCounter,
+    chunk_tokens: int,
+) -> list[str]:
+    """Split one unit that exceeds the budget: by line first, then by word."""
+    separator, parts = ("\n", text.split("\n")) if "\n" in text else (" ", text.split())
+    pieces: list[str] = []
+    current: list[str] = []
+    for part in parts:
+        candidate = separator.join([*current, part])
+        if current and token_counter.count(candidate) > chunk_tokens:
+            pieces.append(separator.join(current))
+            current = []
+        if not current and token_counter.count(part) > chunk_tokens:
+            if separator == "\n":
+                pieces.extend(_split_oversized(part, token_counter, chunk_tokens))
+            else:
+                pieces.append(part)  # a single giant token run; keep as-is
+            continue
+        current.append(part)
+    if current:
+        pieces.append(separator.join(current))
+    return [piece for piece in pieces if piece.strip()]
+
+
+def _pack_units(
+    units: list[_TextUnit],
+    chunk_tokens: int,
+    overlap_tokens: int,
+) -> list[list[_TextUnit]]:
+    packed: list[list[_TextUnit]] = []
+    current: list[_TextUnit] = []
+    current_tokens = 0
+    for unit in units:
+        if current and current_tokens + unit.tokens > chunk_tokens:
+            packed.append(current)
+            tail: list[_TextUnit] = []
+            tail_tokens = 0
+            for previous in reversed(current):
+                if tail_tokens + previous.tokens > overlap_tokens:
+                    break
+                tail.insert(0, previous)
+                tail_tokens += previous.tokens
+            while tail and tail_tokens + unit.tokens > chunk_tokens:
+                tail_tokens -= tail.pop(0).tokens
+            current, current_tokens = tail, tail_tokens
+        current.append(unit)
+        current_tokens += unit.tokens
+    if current:
+        packed.append(current)
+    return packed
+
+
+def _render_chunk(document: dict[str, str], units: list[_TextUnit]) -> str:
+    header = f"{document['client']} | {document['title']}"
+    section = units[0].heading
+    if section and section != document["title"]:
+        header = f"{header} > {section}"
+
+    body = ""
+    for unit in units:
+        if body:
+            body += "\n\n" if unit.starts_block else " "
+        body += unit.text
+    return f"{header}\n\n{body}"
+
+
 class Retriever(Protocol):
     """Ranked chunk retrieval shared by the in-memory and pgvector backends."""
 
@@ -114,6 +307,39 @@ class FastEmbedTextEmbedder:
 
     def query_embed(self, query: str) -> Iterable[Sequence[float]]:
         return self._model.query_embed(query)
+
+    def token_counter(self) -> "FastEmbedTokenCounter":
+        return FastEmbedTokenCounter(self._model.model.tokenizer)
+
+    @property
+    def model_identity(self) -> str:
+        """Model name plus the downloaded snapshot revision, when known.
+
+        FastEmbed fetches the latest upstream ONNX snapshot and does not pin a
+        revision, so the same model name can produce different vectors after
+        a cache refresh. Storing this identity makes ingestion re-embed then.
+        """
+        from pathlib import Path
+
+        model_dir = getattr(self._model.model, "_model_dir", None)
+        if model_dir is None:
+            return EMBEDDING_MODEL_NAME
+        return f"{EMBEDDING_MODEL_NAME}@{Path(model_dir).name[:12]}"
+
+
+class FastEmbedTokenCounter:
+    """Counts tokens with the embedding model's own WordPiece tokenizer."""
+
+    def __init__(self, tokenizer: Any) -> None:
+        from tokenizers import Tokenizer
+
+        # Copy so FastEmbed's 512-token truncation and padding do not cap counts.
+        self._tokenizer = Tokenizer.from_str(tokenizer.to_str())
+        self._tokenizer.no_truncation()
+        self._tokenizer.no_padding()
+
+    def count(self, text: str) -> int:
+        return len(self._tokenizer.encode(text, add_special_tokens=False).ids)
 
 
 class InMemoryRetriever:
