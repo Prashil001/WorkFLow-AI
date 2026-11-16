@@ -8,19 +8,20 @@ on:
 permissions:
   contents: read
 
+env:
+  POSTGRES_USER: workflow_ai
+  POSTGRES_PASSWORD: workflow_ai_test_password
+  POSTGRES_DB: workflow_ai
+  POSTGRES_HOST: 127.0.0.1
+  POSTGRES_PORT: 5432
+  LANGSMITH_TRACING: "false"
+
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
-    env:
-      POSTGRES_USER: workflow_ai
-      POSTGRES_PASSWORD: workflow_ai_test_password
-      POSTGRES_DB: workflow_ai
-      POSTGRES_HOST: 127.0.0.1
-      POSTGRES_PORT: 5432
-      LANGSMITH_TRACING: "false"
     services:
       postgres:
         image: pgvector/pgvector:pg17-trixie
@@ -54,3 +55,63 @@ jobs:
 
       - name: Run backend test suite
         run: uv run pytest -q
+
+  eval-smoke:
+    # Real embeddings, real pgvector + full-text retrieval, fixed 16-query slice.
+    # No LLM calls, so no Groq credentials are needed.
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17-trixie
+        env:
+          POSTGRES_USER: workflow_ai
+          POSTGRES_PASSWORD: workflow_ai_test_password
+          POSTGRES_DB: workflow_ai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U workflow_ai -d workflow_ai"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Apply database migrations
+        run: uv run alembic upgrade head
+
+      - name: Point FastEmbed at a cacheable model directory
+        run: echo "FASTEMBED_CACHE_PATH=$HOME/.cache/fastembed" >> "$GITHUB_ENV"
+
+      - name: Cache the embedding model
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5-${{ runner.os }}-v1
+
+      - name: Run RAG evaluation smoke test
+        run: uv run python -m app.evaluation.smoke --output evaluation/smoke-ci.json
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rag-eval-smoke
+          path: backend/evaluation/smoke-ci.json
+          if-no-files-found: ignore

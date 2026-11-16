@@ -1,21 +1,33 @@
 # WorkFlow AI
 
-WorkFlow AI is a backend-first workflow engine that turns a business request into a validated task plan, checks task dependencies, retrieves relevant fictional business data, and produces grounded drafts. It is built to demonstrate practical AI engineering patterns with FastAPI, LangGraph, Groq, FastEmbed, PostgreSQL, SQLAlchemy, Alembic, MCP, and pytest.
+WorkFlow AI is a backend-first workflow engine that turns a business request into a validated task plan, checks task dependencies, retrieves relevant data, and produces grounded drafts. Its retrieval layer is a measured RAG system: PostgreSQL with pgvector and full-text search, hybrid fusion, cross-encoder reranking, and a versioned evaluation suite with confidence intervals. It is built with FastAPI, LangGraph, Groq, FastEmbed, PostgreSQL/pgvector, SQLAlchemy, Alembic, MCP, and pytest.
+
+**Measured retrieval quality** on an 80-query, corpus-verified evaluation set over 227 documentation pages (65 answerable queries). Full method and caveats are under [RAG evaluation](#rag-evaluation-v2).
+
+| Config | recall@5 | nDCG@5 | MRR@10 | p50 latency |
+| --- | ---: | ---: | ---: | ---: |
+| A: dense vector (pgvector HNSW) | 0.810 | 0.764 | 0.805 | 26 ms |
+| C: hybrid (dense + full-text, RRF) + bge-reranker-base | 0.892 | 0.820 | 0.839 | 8.18 s (CPU) |
+
+C's gains over A in recall@5 (+0.082) and nDCG@5 (+0.056) have 95% bootstrap intervals that exclude zero; its MRR@10 gain does not. Source files: [`backend/evaluation/`](backend/evaluation/).
 
 ## What it demonstrates
 
 - Structured LLM planning and Pydantic validation
 - Dependency ordering, readiness routing, failure isolation, and duplicate-run protection
 - Read-only local tools exposed through an MCP server
-- Semantic retrieval with document chunks, embeddings, cosine similarity, and source IDs
+- Idempotent pgvector ingestion with token-aware, sentence-aware chunking
+- Dense, full-text, hybrid (Reciprocal Rank Fusion), and cross-encoder-reranked retrieval behind one `Retriever` interface
+- A corpus-verified evaluation set with recall@k, MRR, nDCG, latency percentiles, LLM-as-judge generation metrics, citation checks, and paired bootstrap confidence intervals
 - Proposal and email drafts grounded in retrieved source documents
-- Versioned regression evaluations with measured retrieval and citation-integrity results
 - Opt-in LangSmith traces, request IDs, bounded provider retries, and timeouts
 - A single configured API identity with separate API and workflow-executor tokens
 
 All business records are fictional. Calendar tools only read the local sample dataset, and generated emails or proposals remain drafts. The project does not send email or write to a live calendar.
 
 ## Architecture
+
+### Workflow engine
 
 ```mermaid
 flowchart TD
@@ -29,7 +41,7 @@ flowchart TD
     V -->|Ready| X[Dependency-aware executor]
     X --> T[Read-only local tools]
     T --> D[(Fictional pricing and calendar data)]
-    X --> RET[FastEmbed semantic retrieval]
+    X --> RET["Retriever: in-memory or pgvector"]
     RET --> D
     X --> L[Groq grounded draft generation]
     L --> OUT[Task results with source IDs]
@@ -38,9 +50,35 @@ flowchart TD
 
 The API owns workflow persistence and access checks. LangGraph runs the planning and execution nodes. The executor only starts after the plan passes validation; failed prerequisites skip dependent tasks while independent tasks can continue. Retrieval and MCP both use the same local read-only tool layer.
 
+### RAG pipeline
+
+```mermaid
+flowchart LR
+    subgraph Ingestion["Ingestion: app.rag.ingest"]
+        SRC["Pinned MIT docs: FastAPI, Pydantic, SQLModel"] --> CLEAN["build_corpus: markdown cleaning"]
+        CLEAN --> CHUNK["Sentence-aware chunker, 400-token budget, 15% overlap"]
+        CHUNK --> EMBED["FastEmbed bge-small-en-v1.5, 384-dim"]
+    end
+    EMBED --> PG[("PostgreSQL document_chunks: vector(384) HNSW index + tsvector GIN index")]
+    subgraph Retrieval["Retrieval: one Retriever interface"]
+        QUERY[Question] --> DENSE["Dense: pgvector cosine, top 50"]
+        QUERY --> LEX["Full-text: ts_rank_cd, top 50"]
+        DENSE --> RRF["Reciprocal Rank Fusion, k=60"]
+        LEX --> RRF
+        RRF --> RERANK["Cross-encoder rerank, top 20"]
+    end
+    PG --> DENSE
+    PG --> LEX
+    RERANK --> CTX["Top chunks with source IDs"]
+    CTX --> GEN["Groq gpt-oss-20b: cited answer or abstain"]
+    GEN --> EVAL["Evaluation: gpt-oss-120b judge, citation and abstention checks"]
+```
+
+Each stage is a separate `Retriever` (`PgVectorRetriever`, `PgFullTextRetriever`, `HybridRetriever`, `RerankingRetriever`), so configurations compose without changes to callers; `InMemoryRetriever` implements the same interface for unit tests.
+
 ## Local setup
 
-Requirements: Python 3.12, `uv`, and Docker with Compose. The first semantic retrieval run downloads the small FastEmbed model; subsequent runs use its local cache.
+Requirements: Python 3.12, `uv`, and Docker with Compose. The first retrieval run downloads the small FastEmbed model; subsequent runs use its local cache. FastEmbed caches models in the system temp folder by default; set `FASTEMBED_CACHE_PATH` to keep them somewhere persistent.
 
 From PowerShell:
 
@@ -67,7 +105,15 @@ uv run python -m app.bootstrap_user
 uv run uvicorn app.main:app --reload
 ```
 
-The database image is `pgvector/pgvector:pg17-trixie` (PostgreSQL 17 with pgvector, on the same Debian release as the official `postgres:17` image so existing volumes keep matching collations). Retrieval runs in memory by default. To serve it from PostgreSQL instead, load a corpus into the `document_chunks` table (HNSW cosine index plus a generated `tsvector` with a GIN index) and switch the backend:
+The API documentation is at <http://127.0.0.1:8000/docs>; the health endpoint is <http://127.0.0.1:8000/health>.
+
+The default `WORKFLOW_USER_ID` is a fixed demo identity. If you change it, run the bootstrap command again after migrations. API access is intentionally single-user: the API bearer token maps to that configured identity, and the separate executor token is required for workflow execution and direct status updates. This is a small demo access gate, not a replacement for an identity provider in a public multi-user deployment.
+
+## Retrieval (RAG)
+
+The database image is `pgvector/pgvector:pg17-trixie`: PostgreSQL 17 with pgvector, on the same Debian release as the official `postgres:17` image, so existing volumes keep matching collations. Chunks live in the `document_chunks` table, which holds a `vector(384)` embedding with an HNSW cosine index, a generated English `tsvector` with a GIN index, and a `corpus` column so several corpora can share the table.
+
+### Ingestion
 
 ```powershell
 uv run python -m app.rag.ingest --corpus pricing-mock            # fictional data for workflow tools
@@ -76,9 +122,11 @@ uv run python -m app.rag.ingest --corpus stack-docs --chunk-size 300 --overlap 4
 uv run python -m app.rag.ingest --corpus stack-docs --dry-run    # report changes only
 ```
 
-Then set `RAG_RETRIEVER=pgvector` in `backend/.env`; the workflow tools query the `pricing-mock` corpus. Ingestion is idempotent and scoped to one corpus: unchanged chunks are not re-embedded, changed chunks are updated in place, and chunks removed from that corpus are deleted, all in one transaction. The stored embedding-model identity includes the downloaded FastEmbed snapshot revision (for example `BAAI/bge-small-en-v1.5@aa8f8b060edb`), because FastEmbed does not pin model revisions; if a cache refresh pulls a different snapshot, the next ingestion re-embeds instead of mixing vectors.
+Ingestion is idempotent and scoped to one corpus: unchanged chunks are not re-embedded, changed chunks are updated in place, and chunks removed from that corpus are deleted, all in one transaction under a per-corpus advisory lock. The stored embedding-model identity includes the downloaded FastEmbed snapshot revision (for example `BAAI/bge-small-en-v1.5@aa8f8b060edb`), because FastEmbed does not pin model revisions. If a cache refresh pulls a different snapshot, the next ingestion re-embeds instead of mixing vectors.
 
-### Retrieval corpus
+The workflow tools retrieve from the `pricing-mock` corpus. They run in memory by default; set `RAG_RETRIEVER=pgvector` in `backend/.env` to serve them from PostgreSQL.
+
+### Corpus
 
 `stack-docs` is a realistic retrieval corpus of **227 documentation pages** (1.7 MB of cleaned text, 1,364 chunks at the default chunk size) from three MIT-licensed projects in this stack, each pinned to a commit:
 
@@ -88,13 +136,20 @@ Then set `RAG_RETRIEVER=pgvector` in `backend/.env`; the workflow tools query th
 | Pydantic | 51 | [pydantic/pydantic](https://github.com/pydantic/pydantic) `docs` | MIT |
 | SQLModel | 56 | [fastapi/sqlmodel](https://github.com/fastapi/sqlmodel) `docs` | MIT |
 
-The corpus file is [`backend/app/rag/data/stack_docs_corpus.v1.json`](backend/app/rag/data/stack_docs_corpus.v1.json); commit SHAs, copyright lines, and full license texts are in [`THIRD_PARTY_NOTICES.md`](backend/app/rag/data/THIRD_PARTY_NOTICES.md). [`app/rag/build_corpus.py`](backend/app/rag/build_corpus.py) regenerates it from local checkouts. Cleaning removes build macros, code-include directives (so examples that live in separate source files are not in the corpus), heading anchors, HTML, API-reference stubs, changelogs, internal `_`-prefixed files, and pages under 80 words; inline fenced code is kept. The fictional pricing and calendar data stays as the source for the workflow tools.
+The corpus file is [`backend/app/rag/data/stack_docs_corpus.v1.json`](backend/app/rag/data/stack_docs_corpus.v1.json); commit SHAs, copyright lines, and full license texts are in [`THIRD_PARTY_NOTICES.md`](backend/app/rag/data/THIRD_PARTY_NOTICES.md). [`app/rag/build_corpus.py`](backend/app/rag/build_corpus.py) regenerates it from local checkouts. Cleaning removes:
 
-Documentation pages use token-aware, sentence-aware chunking: text is split into headings, sentences, and whole fenced code blocks, then packed up to `RAG_CHUNK_TOKENS` (default 400) counted with the embedding model's own WordPiece tokenizer, since bge-small-en-v1.5 truncates at 512 tokens. Each chunk starts with whole trailing sentences from the previous chunk, up to `RAG_CHUNK_OVERLAP_TOKENS` (default 60, i.e. 15%); a boundary after a sentence or code block longer than that budget gets no overlap rather than a mid-sentence cut. Each chunk is prefixed with `collection | page title > section`. The fictional pricing corpus keeps the original word chunker so the v1 evaluation stays comparable.
+- build macros and code-include directives, so examples that live in separate source files are not in the corpus;
+- heading anchors and HTML;
+- API-reference stubs, changelogs, and internal `_`-prefixed files;
+- pages under 80 words.
 
-The API documentation is at <http://127.0.0.1:8000/docs>; the health endpoint is <http://127.0.0.1:8000/health>.
+Inline fenced code is kept.
 
-The default `WORKFLOW_USER_ID` is a fixed demo identity. If you change it, run the bootstrap command again after migrations. API access is intentionally single-user: the API bearer token maps to that configured identity, and the separate executor token is required for workflow execution and direct status updates. This is a small demo access gate, not a replacement for an identity provider in a public multi-user deployment.
+### Chunking
+
+Documentation pages use token-aware, sentence-aware chunking. Text is split into headings, sentences, and whole fenced code blocks, then packed up to `RAG_CHUNK_TOKENS` (default 400). Tokens are counted with the embedding model's own WordPiece tokenizer, because bge-small-en-v1.5 truncates at 512 tokens.
+
+Each chunk starts with whole trailing sentences from the previous chunk, up to `RAG_CHUNK_OVERLAP_TOKENS` (default 60, i.e. 15%). If the sentence or code block at a boundary is longer than that budget, the boundary gets no overlap rather than a mid-sentence cut. Each chunk is prefixed with `collection | page title > section`. The fictional pricing corpus keeps the original word chunker so the v1 evaluation stays comparable.
 
 ## Try the workflow API
 
@@ -155,7 +210,9 @@ Run the backend test suite:
 uv run pytest -q
 ```
 
-Run the versioned evaluation set and write a fresh report:
+Tests use fake embedding, drafting, and judging components, so they need no Groq or LangSmith credentials. PostgreSQL tests run inside a transaction that is always rolled back.
+
+### Workflow regression set (v1)
 
 ```powershell
 uv run python -m app.evaluation.run --output evaluation/results-v1.json
@@ -165,9 +222,9 @@ Evaluation dataset: [`backend/app/evaluation/dataset.v1.json`](backend/app/evalu
 
 The recorded run passed 11/11 checks: plan validation 3/3, dependency execution 2/2, citation integrity 2/2, and retrieval 4/4. On the three positive retrieval queries, Hit@1 and precision@3 were both 3/3; the unrelated query returned no matches. These are small synthetic regression checks, not broad benchmark scores. Planning cases validate known plan fixtures rather than live Groq output, and citation checks verify source IDs rather than the truth of every sentence.
 
-### RAG evaluation v2
+### RAG evaluation (v2)
 
-The v2 set measures retrieval and grounded answering on the `stack-docs` corpus. v1 is unchanged and still runs as above.
+The v2 set measures retrieval and grounded answering on the `stack-docs` corpus.
 
 ```powershell
 uv run python -m app.rag.ingest --corpus stack-docs
@@ -175,7 +232,7 @@ uv run python -m app.evaluation.run_v2 --config vector                    # retr
 uv run python -m app.evaluation.run_v2 --config vector --skip-generation  # retrieval only, no Groq calls
 ```
 
-Each run writes `backend/evaluation/results-v2-<config>.json` with the dataset and corpus SHA-256, embedding-model snapshot, git commit, PostgreSQL and pgvector versions, per-query results, and judge rationales.
+Configs are `vector`, `hybrid`, `hybrid-rerank`, and `hybrid-rerank-minilm`. Each run writes `backend/evaluation/results-v2-<config>.json` with the dataset and corpus SHA-256, embedding-model snapshot, git commit, PostgreSQL and pgvector versions, per-query results, and judge rationales.
 
 **Dataset** ([`dataset.v2.json`](backend/app/evaluation/dataset.v2.json)): 80 queries, each with a question, relevant source IDs, and a reference answer.
 
@@ -186,9 +243,17 @@ Each run writes `backend/evaluation/results-v2-<config>.json` with the dataset a
 | Multi-hop | 15 | Facts from two pages, often across FastAPI, Pydantic, and SQLModel |
 | Unanswerable | 15 | Plausible for this stack but absent from the corpus |
 
-Questions were drafted with an LLM assistant from passages found by searching the corpus, then made checkable: every answerable item carries verbatim evidence quotes, and every unanswerable item carries an `absence_pattern`. A test fails if any quote is missing from its cited page or any absence pattern matches a corpus page. Relevance labels were audited against the pooled top-5 pages of dense and full-text retrieval before any metric was recorded; 11 labels were added where a pooled page explicitly stated a required fact (99 labels in total).
+Questions were drafted with an LLM assistant from passages found by searching the corpus, then made checkable:
 
-**Metrics.** Retrieval is scored per page: chunk results are collapsed to their source page, and recall@1/3/5, MRR@10, and nDCG@5 (binary relevance) are averaged over the 65 answerable queries. Latency is the wall time of one `retrieve()` call, including CPU query embedding, after 3 warm-up queries. Generation uses the top 5 chunks as context for `openai/gpt-oss-20b` (the app's model), and `openai/gpt-oss-120b` judges each answer at temperature 0:
+- every answerable item carries verbatim evidence quotes;
+- every unanswerable item carries an `absence_pattern`;
+- a test fails if any quote is missing from its cited page or any absence pattern matches a corpus page.
+
+Relevance labels were audited against the pooled top-5 pages of dense and full-text retrieval before any metric was recorded. 11 labels were added where a pooled page explicitly stated a required fact (99 labels in total).
+
+**Metrics.** Retrieval is scored per page: chunk results are collapsed to their source page, and recall@1/3/5, MRR@10, and nDCG@5 (binary relevance) are averaged over the 65 answerable queries. Latency is the wall time of one `retrieve()` call, including CPU query embedding, after 3 warm-up queries.
+
+Generation uses the top 5 chunks as context for `openai/gpt-oss-20b` (the app's model). `openai/gpt-oss-120b` judges each answer at temperature 0:
 
 - **Faithfulness:** share of the answer's atomic claims supported by the context.
 - **Answer relevance:** 1-5.
@@ -196,7 +261,7 @@ Questions were drafted with an LLM assistant from passages found by searching th
 
 Citation integrity is checked deterministically: cited IDs must be in the given context, answers must cite something, and the rate of citing a gold page is reported. Abstention is measured on both unanswerable and answerable queries.
 
-**Baseline results: dense vector retrieval (config A).** Source: [`backend/evaluation/results-v2-vector.json`](backend/evaluation/results-v2-vector.json), recorded at commit `145620a` with `BAAI/bge-small-en-v1.5@aa8f8b060edb`, PostgreSQL 17.12, and pgvector 0.8.7. The metrics are identical to the first baseline run at `d0427cf`, since retrieval is deterministic.
+**Baseline: dense vector retrieval (config A).** Source: [`backend/evaluation/results-v2-vector.json`](backend/evaluation/results-v2-vector.json), recorded at commit `145620a` with `BAAI/bge-small-en-v1.5@aa8f8b060edb`, PostgreSQL 17.12, and pgvector 0.8.7. The metrics are identical to the first baseline run at `d0427cf`, since retrieval is deterministic.
 
 | Queries | recall@1 | recall@3 | recall@5 | MRR@10 | nDCG@5 |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -262,7 +327,32 @@ uv run python -m app.evaluation.run_v2 --config hybrid-rerank --skip-generation
 uv run python -m app.evaluation.compare vector hybrid hybrid-rerank-minilm hybrid-rerank
 ```
 
-CI runs locked dependency installation, database migrations, and the full backend test suite on pushes to `main` and pull requests. Tests use fake embedding and drafting components, so they do not need Groq or LangSmith credentials.
+### Continuous integration
+
+[`backend-ci.yml`](.github/workflows/backend-ci.yml) runs on pushes to `main` and on pull requests:
+
+1. **`test`:** locked dependency install, Alembic migrations against a `pgvector/pgvector:pg17-trixie` service, and the full test suite.
+2. **`eval-smoke`** (after `test`):
+   - ingests a fixed slice of the docs corpus into an isolated `stack-docs-smoke` corpus, using the real embedding model (cached between runs);
+   - runs the vector and hybrid retrievers on 16 fixed v2 queries;
+   - fails if recall@5 or MRR@10 falls below a regression floor.
+
+The floors sit well below what the slice scored when they were set; they guard against breakage and are not reported results. The smoke report is uploaded as a build artifact. Locally:
+
+```powershell
+uv run python -m app.evaluation.smoke
+```
+
+## Limitations
+
+- **Evaluation size.** 80 queries (65 answerable) over one 227-page English corpus. Several differences between configs are not resolved by the bootstrap intervals, and results may not transfer to other domains.
+- **How the labels were made.** The dataset was drafted with an LLM assistant and verified mechanically against the corpus (quotes and absence patterns), not reviewed by independent annotators. Relevance is binary and per page. The label audit pooled only dense and full-text results, so a relevant page that neither retrieved may be unlabeled.
+- **Generation quality is not yet measured.** The generation metrics and the LLM-as-judge pipeline are implemented, but no full run fits the Groq free-tier daily limit yet. When recorded, they will be judged by a model, not by people.
+- **Lexical ranking is not BM25.** Postgres `ts_rank_cd` has no IDF, which is the likely reason hybrid fusion lowers recall@1.
+- **Latency.** Measured on one laptop CPU with PostgreSQL in Docker; it varies between runs. The bge reranker's 8 s p50 is not interactive without a GPU.
+- **No retrieval-side abstention.** Dense similarity scores do not separate unanswerable questions from answerable ones, so abstention relies on the generator.
+- **Corpus coverage.** Code examples that the source docs include from separate files are not in the corpus, and the corpus is a pinned snapshot of each project's docs.
+- **Scope of the hybrid pipeline.** Hybrid retrieval and reranking are evaluated on the docs corpus. The workflow API still serves the fictional pricing data through the in-memory or dense pgvector retriever (`RAG_RETRIEVER`).
 
 ## Observability and data handling
 

@@ -63,28 +63,29 @@ class RetrieverConfig:
     description: dict[str, Any] = field(default_factory=dict)
 
 
-def build_vector_config() -> RetrieverConfig:
+def build_vector_config(corpus: str | None = None, embedder: Any = None) -> RetrieverConfig:
     from app.rag.corpus import DOCS_CORPUS
     from app.rag.pgvector_retriever import PgVectorRetriever
     from app.workflow_engine.rag import FastEmbedTextEmbedder
 
-    embedder = FastEmbedTextEmbedder()
+    corpus = corpus or DOCS_CORPUS
+    embedder = embedder or FastEmbedTextEmbedder()
     return RetrieverConfig(
         name="vector",
-        retriever=PgVectorRetriever(embedder, corpus=DOCS_CORPUS, minimum_score=0.0),
+        retriever=PgVectorRetriever(embedder, corpus=corpus, minimum_score=0.0),
         description={
             "method": "dense cosine similarity over pgvector HNSW (m=16, ef_construction=64)",
             "embedding_model": embedder.model_identity,
-            "corpus": DOCS_CORPUS,
+            "corpus": corpus,
         },
     )
 
 
-def build_hybrid_config() -> RetrieverConfig:
+def build_hybrid_config(corpus: str | None = None, embedder: Any = None) -> RetrieverConfig:
     from app.rag.hybrid import RRF_K, HybridRetriever, PgFullTextRetriever
     from app.workflow_engine.rag import MAX_RETRIEVAL_LIMIT
 
-    vector = build_vector_config()
+    vector = build_vector_config(corpus, embedder)
     return RetrieverConfig(
         name="hybrid",
         retriever=HybridRetriever(
