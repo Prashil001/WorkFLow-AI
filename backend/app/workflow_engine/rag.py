@@ -8,6 +8,10 @@ from app.workflow_engine.mock_data import load_mock_business_data
 
 
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+DEFAULT_CHUNK_SIZE = 22
+DEFAULT_CHUNK_OVERLAP = 5
+DEFAULT_MINIMUM_SCORE = 0.70
+MAX_RETRIEVAL_LIMIT = 10
 
 
 class TextEmbedder(Protocol):
@@ -38,8 +42,8 @@ class RetrievedChunk:
 def chunk_documents(
     documents: list[dict[str, str]],
     *,
-    chunk_size: int = 22,
-    overlap: int = 5,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[DocumentChunk]:
     if chunk_size < 1 or overlap < 0 or overlap >= chunk_size:
         raise ValueError("Chunk size must be positive and overlap smaller than it")
@@ -70,6 +74,35 @@ def chunk_documents(
     return chunks
 
 
+class Retriever(Protocol):
+    """Ranked chunk retrieval shared by the in-memory and pgvector backends."""
+
+    def retrieve(
+        self,
+        query: str,
+        *,
+        limit: int = 3,
+    ) -> list[RetrievedChunk]: ...
+
+
+def clamp_retrieval_limit(limit: int) -> int:
+    return max(1, min(limit, MAX_RETRIEVAL_LIMIT))
+
+
+def rank_retrieved_chunks(
+    chunks: Iterable[RetrievedChunk],
+    *,
+    minimum_score: float,
+    limit: int,
+) -> list[RetrievedChunk]:
+    """Apply the shared score threshold, tie-break order, and result limit."""
+    eligible = [chunk for chunk in chunks if chunk.score >= minimum_score]
+    eligible.sort(
+        key=lambda chunk: (-chunk.score, chunk.source_id, chunk.chunk_index)
+    )
+    return eligible[: clamp_retrieval_limit(limit)]
+
+
 class FastEmbedTextEmbedder:
     def __init__(self) -> None:
         from fastembed import TextEmbedding
@@ -89,9 +122,9 @@ class InMemoryRetriever:
         documents: list[dict[str, str]],
         embedder: TextEmbedder,
         *,
-        chunk_size: int = 22,
-        overlap: int = 5,
-        minimum_score: float = 0.70,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        overlap: int = DEFAULT_CHUNK_OVERLAP,
+        minimum_score: float = DEFAULT_MINIMUM_SCORE,
     ) -> None:
         self.chunks = chunk_documents(
             documents,
@@ -119,31 +152,21 @@ class InMemoryRetriever:
         if query_vector is None:
             return []
 
-        scored_chunks = []
-        for chunk, vector in zip(self.chunks, self._vectors, strict=True):
-            score = _cosine_similarity(query_vector, vector)
-            if score >= self.minimum_score:
-                scored_chunks.append((score, chunk))
-
-        scored_chunks.sort(
-            key=lambda item: (
-                -item[0],
-                item[1].source_id,
-                item[1].chunk_index,
-            )
+        return rank_retrieved_chunks(
+            (
+                RetrievedChunk(
+                    source_id=chunk.source_id,
+                    client=chunk.client,
+                    title=chunk.title,
+                    chunk_index=chunk.chunk_index,
+                    text=chunk.text,
+                    score=_cosine_similarity(query_vector, vector),
+                )
+                for chunk, vector in zip(self.chunks, self._vectors, strict=True)
+            ),
+            minimum_score=self.minimum_score,
+            limit=limit,
         )
-
-        return [
-            RetrievedChunk(
-                source_id=chunk.source_id,
-                client=chunk.client,
-                title=chunk.title,
-                chunk_index=chunk.chunk_index,
-                text=chunk.text,
-                score=score,
-            )
-            for score, chunk in scored_chunks[: max(1, min(limit, 10))]
-        ]
 
 
 def _cosine_similarity(
@@ -162,7 +185,16 @@ def _cosine_similarity(
 
 
 @lru_cache(maxsize=1)
-def get_default_retriever() -> InMemoryRetriever:
+def get_default_retriever() -> Retriever:
+    """Build the retriever selected by RAG_RETRIEVER (memory or pgvector)."""
+    from app.core.config import get_settings
+
+    backend = get_settings().rag_retriever
+    if backend == "pgvector":
+        from app.rag.pgvector_retriever import PgVectorRetriever
+
+        return PgVectorRetriever(embedder=FastEmbedTextEmbedder())
+
     data: dict[str, Any] = load_mock_business_data()
     return InMemoryRetriever(
         documents=data["pricing_documents"],
@@ -174,7 +206,7 @@ def retrieve_pricing_documents(
     query: str,
     *,
     limit: int = 3,
-    retriever: InMemoryRetriever | None = None,
+    retriever: Retriever | None = None,
 ) -> list[dict[str, object]]:
     active_retriever = retriever or get_default_retriever()
     matches = []

@@ -4,7 +4,7 @@ import re
 from app.workflow_engine.schemas import PlannedTask
 from app.workflow_engine.mock_data import load_mock_business_data
 from app.workflow_engine.rag import (
-    InMemoryRetriever,
+    Retriever,
     retrieve_pricing_documents,
 )
 _STOP_WORDS = {
@@ -34,7 +34,7 @@ def search_pricing_documents(
     query: str,
     limit: int = 3,
     *,
-    retriever: InMemoryRetriever | None = None,
+    retriever: Retriever | None = None,
 ) -> str:
     """Retrieve relevant passages from the fictional pricing dataset."""
     matches = retrieve_pricing_documents(
@@ -78,7 +78,7 @@ def check_calendar_availability(query: str) -> str:
 def run_read_only_tool(
     task: PlannedTask,
     *,
-    retriever: InMemoryRetriever | None = None,
+    retriever: Retriever | None = None,
 ) -> str | None:
     """Dispatch only explicitly allowed read-only task types."""
     if task.task_type == "retrieve_documents":

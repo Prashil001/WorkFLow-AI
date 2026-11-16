@@ -23,7 +23,7 @@ jobs:
       LANGSMITH_TRACING: "false"
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:pg17-trixie
         env:
           POSTGRES_USER: workflow_ai
           POSTGRES_PASSWORD: workflow_ai_test_password

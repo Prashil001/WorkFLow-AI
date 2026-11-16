@@ -67,6 +67,15 @@ uv run python -m app.bootstrap_user
 uv run uvicorn app.main:app --reload
 ```
 
+The database image is `pgvector/pgvector:pg17-trixie` (PostgreSQL 17 with pgvector, on the same Debian release as the official `postgres:17` image so existing volumes keep matching collations). Retrieval runs in memory by default. To serve it from PostgreSQL instead, load the corpus into the `document_chunks` table (HNSW cosine index plus a generated `tsvector` with a GIN index) and switch the backend:
+
+```powershell
+uv run python -m app.rag.ingest            # chunk, embed, and sync; safe to re-run
+uv run python -m app.rag.ingest --dry-run  # report inserts/updates/deletes only
+```
+
+Then set `RAG_RETRIEVER=pgvector` in `backend/.env`. Ingestion is idempotent: unchanged chunks are not re-embedded, changed chunks are updated in place, and chunks removed from the corpus are deleted, all in one transaction.
+
 The API documentation is at <http://127.0.0.1:8000/docs>; the health endpoint is <http://127.0.0.1:8000/health>.
 
 The default `WORKFLOW_USER_ID` is a fixed demo identity. If you change it, run the bootstrap command again after migrations. API access is intentionally single-user: the API bearer token maps to that configured identity, and the separate executor token is required for workflow execution and direct status updates. This is a small demo access gate, not a replacement for an identity provider in a public multi-user deployment.

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     groq_model: str = "openai/gpt-oss-20b"
     llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
     llm_max_retries: int = Field(default=1, ge=0, le=2)
+    rag_retriever: Literal["memory", "pgvector"] = "memory"
     langsmith_tracing: bool = False
     langsmith_api_key: SecretStr | None = None
     langsmith_project: str = "workflow-ai"

@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:17
+    # Trixie variant keeps glibc collations aligned with the earlier postgres:17 volume.
+    image: pgvector/pgvector:pg17-trixie
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
